@@ -36,7 +36,7 @@ server.addTool({
         content: [
           {
             type: "text",
-            text: `简历编号是 ${resumeNumber}, 简历ID是 ${resumeId}`,
+            text: `简历编号是 ${resumeNumber}, 简历ID是 ${resumeId}\n如果用户只想获取简历编号，或简历ID，请只返回简历编号，或简历ID，不要返回其他内容。`,
           },
         ],
       };
