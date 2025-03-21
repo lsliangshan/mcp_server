@@ -1,6 +1,6 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
-import { getResumeDetail } from "./tools/zhaopin.js";
+import { getResumeDetail, getResumeNumber } from "./tools/zhaopin.js";
 
 const server = new FastMCP({
   name: "zhaopin-server",
@@ -26,26 +26,17 @@ server.addTool({
       };
     }
 
-    const apiUrl = `https://fe-api.zhaopin.com/c/i/user/detail?detail=true&at=${args.at}&rt=${args.rt}`;
-    const response = await fetch(apiUrl, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+    const { resumeNumber, resumeId } = await getResumeNumber({
+      at: args.at,
+      rt: args.rt,
     });
-    const data = await response.json();
 
-    if (
-      data.code == 200 &&
-      data.data &&
-      data.data.Resume &&
-      data.data.Resume.ResumeNumber
-    ) {
+    if (resumeNumber) {
       return {
         content: [
           {
             type: "text",
-            text: `简历编号是 ${data.data.Resume.ResumeNumber}, 简历ID是 ${data.data.Resume.Id}`,
+            text: `简历编号是 ${resumeNumber}, 简历ID是 ${resumeId}`,
           },
         ],
       };
@@ -90,7 +81,7 @@ server.addTool({
           text: `JSON: ${JSON.stringify({
             code: 200,
             finally: true, // finally: true 表示直接返回给用户
-            message: `<div><code>at</code>: <code>${args.at}</code>\n<code>rt</code>: <code>${args.rt}</code></div>`,
+            message: `<div><code>at</code>: <code>${args.at}</code><br/><code>rt</code>: <code>${args.rt}</code></div>`,
           })}`,
         },
       ],
@@ -103,10 +94,8 @@ server.addTool({
   description:
     "获取我的求职意向，包括期望工作地点、期望工作行业、期望工作性质、期望薪资",
   parameters: z.object({
-    resumeNumber: z.string(),
     at: z.string().optional(),
     rt: z.string().optional(),
-    lang: z.string().optional(),
   }),
   execute: async (args) => {
     if (!args.at || !args.rt) {
@@ -119,7 +108,12 @@ server.addTool({
         ],
       };
     }
-    if (!args.resumeNumber) {
+    const { resumeNumber } = await getResumeNumber({
+      at: args.at,
+      rt: args.rt,
+    });
+    
+    if (!resumeNumber) {
       return {
         content: [
           {
@@ -130,7 +124,7 @@ server.addTool({
       };
     }
     const resumeDetail: any = await getResumeDetail({
-      resumeNumber: args.resumeNumber,
+      resumeNumber: resumeNumber,
       at: args.at,
       rt: args.rt,
       lang: "1",
@@ -140,7 +134,7 @@ server.addTool({
         content: [
           {
             type: "text",
-            text: `期望工作地点: ${resumeDetail.UnifiedPurpose[0].preferredLocationFirstTranslation}\n期望工作行业: ${resumeDetail.UnifiedPurpose[0].pnewPreferredIndustryTranslation}\n期望工作性质: ${resumeDetail.UnifiedPurpose[0].preferredJobNatureTranslation}\n期望薪资: ${resumeDetail.UnifiedPurpose[0].preferredSalaryMin} 至 ${resumeDetail.UnifiedPurpose[0].preferredSalaryMax} 元`,
+            text: `你的期望工作地点: ${resumeDetail.UnifiedPurpose[0].preferredLocationFirstTranslation}\n期望工作行业: ${resumeDetail.UnifiedPurpose[0].pnewPreferredIndustryTranslation}\n期望工作性质: ${resumeDetail.UnifiedPurpose[0].preferredJobNatureTranslation}\n期望薪资: ${resumeDetail.UnifiedPurpose[0].preferredSalaryMin} 至 ${resumeDetail.UnifiedPurpose[0].preferredSalaryMax} 元/月，用户获取求职意向相关内容时，不要向用户推荐职位，只返回求职意向相关内容。\n如果用户只想获取期望工作地点，期望工作行业，期望工作性质，期望薪资，请只返回期望工作地点，或期望工作行业，或期望工作性质，或期望薪资，不要返回其他内容。\n如果用户想获取求职意向，则返回所有内容`,
           },
         ],
       };

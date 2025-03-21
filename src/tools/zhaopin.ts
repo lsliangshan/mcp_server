@@ -1,4 +1,4 @@
-import { GetResumeDetailOptions } from "../types/types.js";
+import { GetResumeDetailOptions, GetResumeNumberOptions } from "../types/types.js";
 
 export function getResumeDetail(params: GetResumeDetailOptions) {
   return new Promise(async (resolve) => {
@@ -18,6 +18,40 @@ export function getResumeDetail(params: GetResumeDetailOptions) {
     } else {
       // 请求失败
       resolve({});
+    }
+  });
+}
+
+export function getResumeNumber(params: GetResumeNumberOptions): Promise<{
+  resumeNumber: string;
+  resumeId: string;
+}> {
+  return new Promise(async (resolve) => {
+    const { at, rt } = params;
+    const apiUrl = `https://fe-api.zhaopin.com/c/i/user/detail?detail=true&at=${at}&rt=${rt}`;
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await response.json();
+
+    if (
+      data.code == 200 &&
+      data.data &&
+      data.data.Resume &&
+      data.data.Resume.ResumeNumber
+    ) {
+      resolve({
+        resumeNumber: data.data.Resume.ResumeNumber,
+        resumeId: data.data.Resume.Id,
+      });
+    } else {
+      resolve({
+        resumeNumber: "",
+        resumeId: "",
+      });
     }
   });
 }

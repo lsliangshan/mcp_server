@@ -19,3 +19,8 @@ export interface GetResumeDetailOptions {
   resumeNumber: string;
   lang?: "1";
 }
+
+export interface GetResumeNumberOptions {
+  at: string;
+  rt: string;
+}
