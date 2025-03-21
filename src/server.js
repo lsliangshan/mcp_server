@@ -1,5 +1,6 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
+import { getResumeDetail } from "./tools/zhaopin.js";
 
 const server = new FastMCP({
   name: "zhaopin-server",
@@ -94,6 +95,65 @@ server.addTool({
         },
       ],
     };
+  },
+});
+
+server.addTool({
+  name: "getMyJobIntention",
+  description:
+    "获取我的求职意向，包括期望工作地点、期望工作行业、期望工作性质、期望薪资",
+  parameters: z.object({
+    resumeNumber: z.string(),
+    at: z.string().optional(),
+    rt: z.string().optional(),
+    lang: z.string().optional(),
+  }),
+  execute: async (args) => {
+    if (!args.at || !args.rt) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `at/rt不能为空，提示用户检查是否登录`,
+          },
+        ],
+      };
+    }
+    if (!args.resumeNumber) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "简历编号不能为空，提示用户检查是否登录，是否创建过简历",
+          },
+        ],
+      };
+    }
+    const resumeDetail = await getResumeDetail({
+      resumeNumber: args.resumeNumber,
+      at: args.at,
+      rt: args.rt,
+      lang: args.lang,
+    });
+    if (resumeDetail.UnifiedPurpose && resumeDetail.UnifiedPurpose.length > 0) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `期望工作地点: ${resumeDetail.UnifiedPurpose[0].preferredLocationFirstTranslation}\n期望工作行业: ${resumeDetail.UnifiedPurpose[0].pnewPreferredIndustryTranslation}\n期望工作性质: ${resumeDetail.UnifiedPurpose[0].preferredJobNatureTranslation}\n期望薪资: ${resumeDetail.UnifiedPurpose[0].preferredSalaryMin} 至 ${resumeDetail.UnifiedPurpose[0].preferredSalaryMax} 元`,
+          },
+        ],
+      };
+    } else {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "获取求职意向失败，提示用户检查是否登录，是否创建过简历",
+          },
+        ],
+      };
+    }
   },
 });
 

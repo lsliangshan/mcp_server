@@ -12,3 +12,10 @@ export interface XF_RECOGNIZE_IMAGE_RESPONSE {
   conf: number;
   content: string;
 }
+
+export interface GetResumeDetailOptions {
+  at: string;
+  rt: string;
+  resumeNumber: string;
+  lang?: "1";
+}
