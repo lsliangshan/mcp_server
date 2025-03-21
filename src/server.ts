@@ -129,11 +129,11 @@ server.addTool({
         ],
       };
     }
-    const resumeDetail = await getResumeDetail({
+    const resumeDetail: any = await getResumeDetail({
       resumeNumber: args.resumeNumber,
       at: args.at,
       rt: args.rt,
-      lang: args.lang,
+      lang: "1",
     });
     if (resumeDetail.UnifiedPurpose && resumeDetail.UnifiedPurpose.length > 0) {
       return {
