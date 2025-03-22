@@ -1,6 +1,7 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
-import { getResumeDetail, getResumeNumber } from "./tools/zhaopin.js";
+import { getJobDelivered, getResumeDetail, getResumeNumber } from "./tools/zhaopin.js";
+import { JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse } from "./types/types.js";
 const server = new FastMCP({
     name: "zhaopin-server",
     version: "1.0.0",
@@ -225,6 +226,63 @@ server.addTool({
                     {
                         type: "text",
                         text: "获取简历详情失败，提示用户检查是否登录，是否创建过简历",
+                    },
+                ],
+            };
+        }
+    },
+});
+server.addTool({
+    name: "getMyJobDelivered",
+    description: "获取我的投递记录，包括投递成功、被查看、有意向、邀面试、不合适，以及邀面试的子状态: 全部、待确认、已接受、已拒绝",
+    parameters: z.object({
+        at: z.string().optional(),
+        rt: z.string().optional(),
+        status: z.nativeEnum(JobDeliveredStatus).optional(),
+        subStatus: z.nativeEnum(JobDeliveredSubStatus).optional(),
+        // status: z.enum(['send', 'viewed', 'intersted', 'interviewed', 'unsuitable']).optional(),
+        // subStatus: z.enum(['all', 'toBeComfirm', 'accepted', 'refused']).optional(),
+        pageIndex: z.number().optional(),
+        pageSize: z.number().optional(),
+    }),
+    execute: async (args) => {
+        if (!args.at || !args.rt) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `at/rt不能为空，提示用户检查是否登录`,
+                    },
+                ],
+            };
+        }
+        const resumeDetail = await getJobDelivered({
+            at: args.at,
+            rt: args.rt,
+            status: args.status || JobDeliveredStatus.投递成功,
+            subStatus: args.subStatus || JobDeliveredSubStatus.全部,
+            pageIndex: args.pageIndex || 1,
+            pageSize: args.pageSize || 20,
+        });
+        if (resumeDetail.code == 200) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `${resumeDetail.data.length > 0 ? '投递记录: ' : ''} ${resumeDetail.data.map((item) => `职位名称: ${item.jobName} - 薪资: ${item.salary} - 公司名称: ${item.company.name} - 投递时间: ${item.time} - 投递状态: ${JobDeliveredStatusReverse[item.jobStatus.status]} - 投递子状态: ${JobDeliveredSubStatusReverse[item.jobStatus.subStatus]} - 职位详情页链接: ${item.jobURL} - 公司详情页链接: ${item.company.url}`).join('\n')}
+            ${resumeDetail.data.length > 0 ? '\n如果用户只想获取投递记录的职位名称，请只返回用户投递的职位名称，不要返回其他内容。' : ''}
+            \n${resumeDetail.data.length < 1 ? '如果用户想获取投递记录，则返回没有查询到投递记录，不要幻想投递记录' : '如果用户想获取投递记录，则返回' + resumeDetail.data.length + '个投递记录的卡片。'}
+            ${resumeDetail.data.length > 0 ? '\n卡片使用 HTML 标签，卡片容器添加 class="owlscript-card"，职位名称添加 class="owlscript-job-title"，薪资添加 class="owlscript-salary"，公司名称添加 class="owlscript-company-name"，投递时间添加 class="owlscript-delivery-time"，投递状态添加 class="owlscript-delivery-status"。职位名称和公司名称元素要用 <p> 标签包裹。卡片内容包括职位名称、薪资、公司名称、投递时间、投递状态（如果投递子状态非空，则显示为投递子状态），职位名称、公司名称添加超链，超链点击后，分别跳转至职位详情页、公司详情页。直接返回每个字段的值，不要显示字段名称。如：职位名称等' : ''}`,
+                    },
+                ],
+            };
+        }
+        else {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: "获取投递记录失败，提示用户检查是否登录",
                     },
                 ],
             };

@@ -44,3 +44,33 @@ export function getResumeNumber(params) {
         }
     });
 }
+export function getJobDelivered(params) {
+    return new Promise(async (resolve) => {
+        const { at, rt, status, pageIndex = 1, pageSize = 20 } = params;
+        const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/schedule/feedback?index=${pageIndex}&pageSize=${pageSize}&status=${status}&storeViewCount=false&at=${at}&rt=${rt}`;
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        const data = await response.json();
+        if (data.code == 200 &&
+            data.data &&
+            data.data.code == 200 &&
+            data.data.data) {
+            resolve({
+                code: 200,
+                data: data.data.data,
+                total: data.data.total,
+            });
+        }
+        else {
+            resolve({
+                code: data.code,
+                data: [],
+                total: 0,
+            });
+        }
+    });
+}

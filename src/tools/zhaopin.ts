@@ -1,4 +1,4 @@
-import { GetResumeDetailOptions, GetResumeNumberOptions } from "../types/types.js";
+import { GetJobDeliveredOptions, GetResumeDetailOptions, GetResumeNumberOptions } from "../types/types.js";
 
 export function getResumeDetail(params: GetResumeDetailOptions) {
   return new Promise(async (resolve) => {
@@ -51,6 +51,43 @@ export function getResumeNumber(params: GetResumeNumberOptions): Promise<{
       resolve({
         resumeNumber: "",
         resumeId: "",
+      });
+    }
+  });
+}
+
+export function getJobDelivered(params: GetJobDeliveredOptions): Promise<{
+  code: number;
+  data: any[];
+  total: number;
+}> {
+  return new Promise(async (resolve) => {
+    const { at, rt, status, pageIndex = 1, pageSize = 20 } = params;
+    const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/schedule/feedback?index=${pageIndex}&pageSize=${pageSize}&status=${status}&storeViewCount=false&at=${at}&rt=${rt}`;
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await response.json();
+
+    if (
+      data.code == 200 &&
+      data.data &&
+      data.data.code == 200 &&
+      data.data.data
+    ) {
+      resolve({
+        code: 200,
+        data: data.data.data,
+        total: data.data.total,
+      });
+    } else {
+      resolve({
+        code: data.code,
+        data: [],
+        total: 0,
       });
     }
   });
