@@ -7,6 +7,42 @@ const server = new FastMCP({
     version: "1.0.0",
 });
 server.addTool({
+    name: "getMyAtRt",
+    description: "获取我的at和rt",
+    parameters: z.object({
+        at: z.string().optional(),
+        rt: z.string().optional(),
+    }),
+    execute: async (args) => {
+        if (!args.at || !args.rt) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `JSON: ${JSON.stringify({
+                            code: 401,
+                            finally: true, // finally: true 表示直接返回给用户
+                            message: "<div><code>at</code>和<code>rt</code>为空</div>",
+                        })}`,
+                    },
+                ],
+            };
+        }
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `JSON: ${JSON.stringify({
+                        code: 200,
+                        finally: true, // finally: true 表示直接返回给用户
+                        message: `<div><code>at</code>: <code>${args.at}</code><br/><code>rt</code>: <code>${args.rt}</code></div>`,
+                    })}`,
+                },
+            ],
+        };
+    },
+});
+server.addTool({
     name: "getMyResumeNoAndId",
     description: "获取我的简历编号和简历ID",
     parameters: z.object({
@@ -43,42 +79,6 @@ server.addTool({
                 {
                     type: "text",
                     text: "获取简历失败",
-                },
-            ],
-        };
-    },
-});
-server.addTool({
-    name: "getMyAtRt",
-    description: "获取我的at和rt",
-    parameters: z.object({
-        at: z.string().optional(),
-        rt: z.string().optional(),
-    }),
-    execute: async (args) => {
-        if (!args.at || !args.rt) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `JSON: ${JSON.stringify({
-                            code: 401,
-                            finally: true, // finally: true 表示直接返回给用户
-                            message: "<div><code>at</code>和<code>rt</code>为空</div>",
-                        })}`,
-                    },
-                ],
-            };
-        }
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: `JSON: ${JSON.stringify({
-                        code: 200,
-                        finally: true, // finally: true 表示直接返回给用户
-                        message: `<div><code>at</code>: <code>${args.at}</code><br/><code>rt</code>: <code>${args.rt}</code></div>`,
-                    })}`,
                 },
             ],
         };
@@ -256,6 +256,7 @@ server.addTool({
                 ],
             };
         }
+        console.log('..... args', args);
         const resumeDetail = await getJobDelivered({
             at: args.at,
             rt: args.rt,
@@ -270,9 +271,9 @@ server.addTool({
                     {
                         type: "text",
                         text: `${resumeDetail.data.length > 0 ? '投递记录: ' : ''} ${resumeDetail.data.map((item) => `职位名称: ${item.jobName} - 薪资: ${item.salary} - 公司名称: ${item.company.name} - 投递时间: ${item.time} - 投递状态: ${JobDeliveredStatusReverse[item.jobStatus.status]} - 投递子状态: ${JobDeliveredSubStatusReverse[item.jobStatus.subStatus]} - 职位详情页链接: ${item.jobURL} - 公司详情页链接: ${item.company.url}`).join('\n')}
-            ${resumeDetail.data.length > 0 ? '\n如果用户只想获取投递记录的职位名称，请只返回用户投递的职位名称，不要返回其他内容。' : ''}
-            \n${resumeDetail.data.length < 1 ? '如果用户想获取投递记录，则返回没有查询到投递记录，不要幻想投递记录' : '如果用户想获取投递记录，则返回' + resumeDetail.data.length + '个投递记录的卡片。'}
-            ${resumeDetail.data.length > 0 ? '\n卡片使用 HTML 标签，卡片容器添加 class="owlscript-card"，职位名称添加 class="owlscript-job-title"，薪资添加 class="owlscript-salary"，公司名称添加 class="owlscript-company-name"，投递时间添加 class="owlscript-delivery-time"，投递状态添加 class="owlscript-delivery-status"。职位名称和公司名称元素要用 <p> 标签包裹。卡片内容包括职位名称、薪资、公司名称、投递时间、投递状态（如果投递子状态非空，则显示为投递子状态），职位名称、公司名称添加超链，超链点击后，分别跳转至职位详情页、公司详情页。直接返回每个字段的值，不要显示字段名称。如：职位名称等' : ''}`,
+            ${resumeDetail.data.length > 0 ? '如果用户只想获取投递记录的职位名称，请只返回用户投递的职位名称，不要返回其他内容。' : ''}
+            ${resumeDetail.data.length < 1 ? '如果用户想获取投递记录，则返回没有查询到投递记录，不要幻想投递记录' : '如果用户想获取投递记录，则返回' + resumeDetail.data.length + '个投递记录的卡片。'}
+            ${resumeDetail.data.length > 0 ? '卡片使用 HTML 标签，卡片容器添加 class="owlscript-card"，职位名称添加 class="owlscript-job-title"，薪资添加 class="owlscript-salary"，公司名称添加 class="owlscript-company-name"，投递时间添加 class="owlscript-delivery-time"，投递状态添加 class="owlscript-delivery-status"。职位名称和公司名称元素要用 <p> 标签包裹。卡片内容包括职位名称、薪资、公司名称、投递时间、投递状态（如果投递子状态非空，则显示为投递子状态），职位名称、公司名称添加超链，超链点击后，分别跳转至职位详情页、公司详情页。直接返回每个字段的值，不要显示字段名称。如：职位名称等' : ''}`,
                     },
                 ],
             };
