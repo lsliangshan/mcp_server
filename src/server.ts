@@ -221,13 +221,14 @@ server.addTool({
             \n工作/实习经历: ${resumeDetail.WorkExperience.map((item: any) => `公司名称: ${item.companyName} - 所属行业: ${item.wnewIndustryTranslation} - 职位名称: ${item.title} - 拥有技能: ${item.skillTagList.map((skill: any) => skill.name).join(',')} - 当前月薪: ${item.realSalary} 元/月 - 在职时间: ${item.startDateFormat.split(' ')[0]} - 离职时间: ${item.endDateFormat.split(' ')[0]} - 工作描述或内容: ${item.workDesc}`).join('\n')}
             \n项目经历: ${resumeDetail.ProjectExperience.map((item: any) => `项目名称: ${item.proExpProjectName} - 项目开始时间: ${item.proExpStartDateFormat.split(' ')[0]} - 项目结束时间 ${item.proExpEndDateFormat.split(' ')[0]} - 项目描述: ${item.proExpProjectDesc}`).join('\n')}
             \n如果用户只想获取姓名，请只返回用户的姓名，不要返回其他内容。
-            \n如果用户只想获取求职意向中的期望行业，则只返回求职意向中的期望行业，不要返回其他内容，并输出为表格形式，表格使用 HTML 标签。
-            \n如果用户只想获取教育经历中的某一项，如教育经历中的学校名称，则只返回教育经历的学校名称，不要返回其他内容，并输出为表格形式，表格使用 HTML 标签。
-            \n如果用户只想获取工作/实习经历的公司名称，则只返回工作/实习经历中的公司名称，不要返回其他内容，并输出为表格形式，表格使用 HTML 标签。
-            \n如果用户询问“是否在XX公司工作过”，则从所有工作/实习的公司名称中，查找是否包含XX公司，如果包含，则只返回在XX公司的工作/实习经历，不返回其他公司的工作/实习经历，并输出为表格形式，表格使用 HTML 标签；否则返回“否”，不要返回其他内容。
-            \n如果用户只想获取项目经历的项目名称，则只返回项目经历中的项目名称，不要返回其他内容，并输出为表格形式，表格使用 HTML 标签。
-            \n如果用户只想获取某一份教育经历，或工作/实习经历，或项目经历，或求职意向，则只返回该份教育经历，或工作/实习经历，或项目经历，或求职意向，不要返回其他内容，并输出为表格形式，表格使用 HTML 标签。
-            \n如果用户想获取所有教育经历的学校，或工作/实习经历的公司，或项目经历的项目，或求职意向的期望行业，则返回所有教育经历的学校，或工作/实习经历的公司，或项目经历的项目，或求职意向的期望行业，并输出为表格形式，表格使用 HTML 标签。`,
+            \n如果用户只想获取求职意向中的期望行业，则只返回求职意向中的期望行业，不要返回其他内容，并输出为表格形式。
+            \n如果用户只想获取教育经历中的某一项，如教育经历中的学校名称，则只返回教育经历的学校名称，不要返回其他内容，并输出为表格形式。
+            \n如果用户只想获取工作/实习经历的公司名称，则只返回工作/实习经历中的公司名称，不要返回其他内容，并输出为表格形式。
+            \n如果用户询问“是否在XX公司工作过”，则从所有工作/实习的公司名称中，查找是否包含XX公司，如果包含，则只返回在XX公司的工作/实习经历，不返回其他公司的工作/实习经历，并输出为表格形式；否则返回“否”，不要返回其他内容。
+            \n如果用户只想获取项目经历的项目名称，则只返回项目经历中的项目名称，不要返回其他内容，并输出为表格形式。
+            \n如果用户只想获取某一份教育经历，或工作/实习经历，或项目经历，或求职意向，则只返回该份教育经历，或工作/实习经历，或项目经历，或求职意向，不要返回其他内容，并输出为表格形式。
+            \n如果用户想获取所有教育经历的学校，或工作/实习经历的公司，或项目经历的项目，或求职意向的期望行业，则返回所有教育经历的学校，或工作/实习经历的公司，或项目经历的项目，或求职意向的期望行业，并输出为表格形式。
+            \n表格使用 HTML 标签，直接使用 HTML 标签，不要封装成 Markdown 格式`,
           },
         ],
       };
@@ -269,8 +270,6 @@ server.addTool({
         ],
       };
     }
-
-    console.log('..... args', args)
     
     const resumeDetail: any = await getJobDelivered({
       at: args.at,
@@ -289,7 +288,7 @@ server.addTool({
             text: `${resumeDetail.data.length > 0 ? '投递记录: ' : ''} ${resumeDetail.data.map((item: any) => `职位名称: ${item.jobName} - 薪资: ${item.salary} - 公司名称: ${item.company.name} - 投递时间: ${item.time} - 投递状态: ${JobDeliveredStatusReverse[item.jobStatus.status as keyof typeof JobDeliveredStatusReverse]} - 投递子状态: ${JobDeliveredSubStatusReverse[item.jobStatus.subStatus as keyof typeof JobDeliveredSubStatusReverse]} - 职位详情页链接: ${item.jobURL} - 公司详情页链接: ${item.company.url}`).join('\n')}
             ${resumeDetail.data.length > 0 ? '如果用户只想获取投递记录的职位名称，请只返回用户投递的职位名称，不要返回其他内容。' : ''}
             ${resumeDetail.data.length < 1 ? '如果用户想获取投递记录，则返回没有查询到投递记录，不要幻想投递记录' : '如果用户想获取投递记录，则返回' + resumeDetail.data.length + '个投递记录的卡片。'}
-            ${resumeDetail.data.length > 0 ? '卡片使用 HTML 标签，卡片容器添加 class="owlscript-card"，职位名称添加 class="owlscript-job-title"，薪资添加 class="owlscript-salary"，公司名称添加 class="owlscript-company-name"，投递时间添加 class="owlscript-delivery-time"，投递状态添加 class="owlscript-delivery-status"。职位名称和公司名称元素要用 <p> 标签包裹。卡片内容包括职位名称、薪资、公司名称、投递时间、投递状态（如果投递子状态非空，则显示为投递子状态），职位名称、公司名称添加超链，超链点击后，分别跳转至职位详情页、公司详情页。直接返回每个字段的值，不要显示字段名称。如：职位名称等' : ''}`,
+            ${resumeDetail.data.length > 0 ? '卡片使用 HTML 标签，直接使用 HTML 标签，不要封装成 Markdown 格式，卡片容器添加 class="owlscript-card"，职位名称添加 class="owlscript-job-title"，薪资添加 class="owlscript-salary"，公司名称添加 class="owlscript-company-name"，投递时间添加 class="owlscript-delivery-time"，投递状态添加 class="owlscript-delivery-status"。职位名称和公司名称元素要用 <p> 标签包裹。卡片内容包括职位名称、薪资、公司名称、投递时间、投递状态（如果投递子状态非空，则显示为投递子状态），职位名称、公司名称添加超链，超链点击后，分别跳转至职位详情页、公司详情页。直接返回每个字段的值，不要显示字段名称。如：职位名称等' : ''}`,
           },
         ],
       };
