@@ -1,8 +1,9 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
 import { getJobDelivered, getResumeDetail, getResumeNumber } from "./tools/zhaopin.js";
-import { companySizes, companyTypes, ECompanySize, educationTypes, JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, JobSearchConditionMap, jobStatuses, workExpTypes } from "./types/types.js";
+import { companySizes, companyTypes, ECompanySize, educationTypes, industries, EIndustries, JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, JobSearchConditionMap, jobStatuses, workExpTypes, jobTypes } from "./types/types.js";
 import { dateFormat } from "./tools/date.js";
+// import {EIndustries} from './data/industries.js'
 
 const server = new FastMCP({
   name: "zhaopin-server",
@@ -266,13 +267,20 @@ server.addTool({
     /// 搜索关键词，职位或公司名称
     keyword: z.string().optional().describe('搜索关键词，职位或公司名称'),
     /// 职位类别
-    jobCategory: z.string().optional().describe('职位类别'),
+    jobType: z.string().optional().describe('职位类别'),
     /// 公司行业
-    companyIndustry: z.string().optional().describe('公司行业，支持多个行业，用分号隔开，例如：IT;互联网;电子商务'),
+    // industry: z.string().optional().describe('公司行业，支持多个行业，用分号隔开，例如：IT;互联网;电子商务'),
+    industry: z.nativeEnum(EIndustries).array().optional().describe('公司行业。'),
+    /// 省份
+    province: z.string().optional().describe('省份。\n直辖市、自治区、特别行政区的该字段，直接用直辖市、自治区、特别行政区。例如：北京市的该字段也是”北京市“。\n名称标准化，如：湖南省转换成湖南，不要显示省字'),
+    /// 城市
+    city: z.string().optional().describe('城市。\n不要将区县显示在该字段。例如：北京的朝阳区，不要显示在该字段。\n名称标准化，如：长沙市转换成长沙，不要显示市字'),
+    /// 区县
+    county: z.string().optional().describe('区县，例如：海淀区，芙蓉区'),
     /// 工作地点
     workLocation: z.string().optional().describe('工作地点，省、市、区名称，例如：北京;海淀区'),
     /// 地铁沿线
-    subwayLine: z.string().optional().describe('地铁沿线，支持按地铁线搜索，例如：1号线'),
+    subway: z.string().optional().describe('地铁沿线，支持按地铁线搜索，例如：1号线'),
     /// 薪资范围
     salaryType: z.string().optional().describe('薪资范围，格式为：MIN_SALARY,MAX_SALARY，例如：10000,20000。最低薪资为 0000，最高薪资为 9999999'),
     /// 学历要求
@@ -284,15 +292,7 @@ server.addTool({
     /// 公司性质
     companyType: z.string().optional().describe('公司性质，例如：国企、外企、合资、民营、上市公司、股份制企业、事业单位、其他'),
     /// 公司规模，可选值：20人以下、20-99人、100-299人、300-499人、500-999人、1000-9999人、10000人以上
-    // companySize: z.nativeEnum(ECompanySize).optional().describe('公司规模，可选值：20人以下、20-99人、100-299人、300-499人、500-999人、1000-9999人、10000人以上'),
-    /**
-     * {
-      description: '可选值：20人以下、20-99人、100-299人、300-499人、500-999人、1000-9999人、10000人以上。',
-      message: '选择第一个满足条件的公司规模，如 200人以上，应该选择 100-299人，不要选择 10000人以上或其他',
-    }，可选值：1. 20人以下\n2. 20-99人\n3. 100-299人\n4. 300-499人\n5. 500-999人\n6. 1000-9999人\n7. 10000人以上。\n匹配规则：选择第一个满足条件的公司规模，如 200人以上，应该选择 100-299人，不要选择 10000人以上或其他
-     */
     companySize:  z.nativeEnum(ECompanySize).optional().describe('公司规模，按序，优先选择第一个满足条件的公司规模，如 200人以上，应该选择 100-299人，不要选择 10000人以上或其他'),
-    // companySize:  z.string().optional().describe('公司规模，可选值：20人以下、20-99人、100-299人、300-499人、500-999人、1000-9999人、10000人以上'),
     /// 页码
     pageIndex: z.number().optional().default(1).describe('页码，默认1'),
     /// 每页条数
@@ -315,7 +315,7 @@ server.addTool({
     //   rt: args.rt,
     // });
     const resumeNumber = '';
-    console.log('args', args);
+    console.log('>>>>>>>args', args);
     let params: any = {
       "order": 11,
       "eventScenario": "pcSearchedSouSearch",
@@ -326,21 +326,19 @@ server.addTool({
     if (args.keyword) {
       params[JobSearchConditionMap.keyword] = args.keyword;
     }
-    if (args.jobCategory) {
-      // TODO: 职位类别
-      params[JobSearchConditionMap.jobCategory] = args.jobCategory;
+    if (args.jobType) {
+      params[JobSearchConditionMap.jobType] = jobTypes[args.jobType as keyof typeof jobTypes];
     }
-    if (args.companyIndustry) {
-      // TODO: 公司行业
-      params[JobSearchConditionMap.companyIndustry] = args.companyIndustry;
+    if (args.industry) {
+      params[JobSearchConditionMap.industry] = args.industry.map((item: any) => industries[item as keyof typeof industries]).filter((item: any) => item).join(';');
     }
     if (args.workLocation) {
       // TODO: 工作地点
       params[JobSearchConditionMap.workLocation] = args.workLocation;
     }
-    if (args.subwayLine) {
+    if (args.subway) {
       // TODO: 地铁沿线
-      params[JobSearchConditionMap.subwayLine] = args.subwayLine;
+      params[JobSearchConditionMap.subway] = args.subway;
     }
     if (args.salaryType) {
       params[JobSearchConditionMap.salaryType] = args.salaryType;
@@ -379,8 +377,8 @@ server.addTool({
     //   at: args.at,
     //   rt: args.rt,
     //   keyword: args.keyword,
-    //   jobCategory: args.jobCategory,
-    //   companyIndustry: args.companyIndustry,
+    //   jobType: args.jobType,
+    //   industry: args.industry,
     //   workLocation: args.workLocation,
     //   salaryType: args.salaryType,
     //   educationType: args.educationType,
