@@ -1,9 +1,9 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
 import { getJobDelivered, getResumeDetail, getResumeNumber } from "./tools/zhaopin.js";
-import { companySizes, companyTypes, ECompanySize, educationTypes, industries, EIndustries, JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, JobSearchConditionMap, jobStatuses, workExpTypes, jobTypes } from "./types/types.js";
+import { companySizes, companyTypes, ECompanySize, educationTypes, industries, EIndustries, JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, JobSearchConditionMap, jobStatuses, workExpTypes, jobTypes, subways, ESubways, subwayStations } from "./types/types.js";
 import { dateFormat } from "./tools/date.js";
-// import {EIndustries} from './data/industries.js'
+import { ESubwayStations } from "./types/subway_stations.js";
 
 const server = new FastMCP({
   name: "zhaopin-server",
@@ -280,7 +280,9 @@ server.addTool({
     /// 工作地点
     workLocation: z.string().optional().describe('工作地点，省、市、区名称，例如：北京;海淀区'),
     /// 地铁沿线
-    subway: z.string().optional().describe('地铁沿线，支持按地铁线搜索，例如：1号线'),
+    subway: z.nativeEnum(ESubways).optional().describe('地铁沿线'),
+    // TODO: 此处未运行成功
+    subwayStation: z.nativeEnum(ESubwayStations).optional().describe('地铁站'),
     /// 薪资范围
     salaryType: z.string().optional().describe('薪资范围，格式为：MIN_SALARY,MAX_SALARY，例如：10000,20000。最低薪资为 0000，最高薪资为 9999999'),
     /// 学历要求
@@ -338,7 +340,10 @@ server.addTool({
     }
     if (args.subway) {
       // TODO: 地铁沿线
-      params[JobSearchConditionMap.subway] = args.subway;
+      params[JobSearchConditionMap.subway] = subways[args.subway as keyof typeof subways];
+    }
+    if (args.subwayStation) {
+      params[JobSearchConditionMap.subwayStation] = subwayStations[args.subwayStation as keyof typeof subwayStations];
     }
     if (args.salaryType) {
       params[JobSearchConditionMap.salaryType] = args.salaryType;
