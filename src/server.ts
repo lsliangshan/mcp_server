@@ -1,15 +1,43 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
-import { getJobDelivered, getResumeDetail, getResumeNumber } from "./tools/zhaopin.js";
-import { companySizes, companyTypes, ECompanySize, educationTypes, industries, EIndustries, JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, JobSearchConditionMap, jobStatuses, workExpTypes, jobTypes, subways, ESubways, subwayStations } from "./types/types.js";
+import {
+  getJobDelivered,
+  getResumeDetail,
+  getResumeNumber,
+} from "./tools/zhaopin.js";
+import {
+  companySizes,
+  companyTypes,
+  ECompanySize,
+  educationTypes,
+  // industries,
+  // EIndustries,
+  JobDeliveredStatus,
+  JobDeliveredStatusReverse,
+  JobDeliveredSubStatus,
+  JobDeliveredSubStatusReverse,
+  JobSearchConditionMap,
+  jobStatuses,
+  workExpTypes,
+  jobTypes,
+  // subways,
+  // ESubways,
+  // subwayStations,
+} from "./types/types.js";
 import { dateFormat } from "./tools/date.js";
-import { ESubwayStations } from "./types/subway_stations.js";
+import {
+  findCity,
+  findCounty,
+  findProvince,
+  findSubway,
+  findSubwayStation,
+} from "./tools/db.js";
+// import { ESubwayStations } from "./types/subway_stations.js";
 
 const server = new FastMCP({
   name: "zhaopin-server",
   version: "1.0.0",
 });
-
 
 // server.addTool({
 //   name: "getMyJobIntention",
@@ -34,7 +62,7 @@ const server = new FastMCP({
 //       at: args.at,
 //       rt: args.rt,
 //     });
-    
+
 //     if (!resumeNumber) {
 //       return {
 //         content: [
@@ -96,7 +124,7 @@ server.addTool({
       at: args.at,
       rt: args.rt,
     });
-    
+
     if (!resumeNumber) {
       return {
         content: [
@@ -128,18 +156,62 @@ server.addTool({
             text: `姓名: ${resumeDetail.Profile[0].name}
             \n性别: ${resumeDetail.Profile[0].genderTranslation}
             \n当前身份: ${resumeDetail.Profile[0].currentIdentityTranslation}
-            \n出生日期: ${resumeDetail.Profile[0].birthyear}年${resumeDetail.Profile[0].birthmonth}月
-            \n户口所在地: ${resumeDetail.Profile[0].hukouProvinceIdTranslation}-${resumeDetail.Profile[0].hukouCityIdTranslation}
-            \n现居住地: ${resumeDetail.Profile[0].currentProvinceTranslation}-${resumeDetail.Profile[0].currentCityTranslation}-${resumeDetail.Profile[0].currentCityDistrictIdTranslation}
-            \n政治面貌: ${resumeDetail.Profile[0].politicalAffiliationTranslation}
+            \n出生日期: ${resumeDetail.Profile[0].birthyear}年${
+              resumeDetail.Profile[0].birthmonth
+            }月
+            \n户口所在地: ${
+              resumeDetail.Profile[0].hukouProvinceIdTranslation
+            }-${resumeDetail.Profile[0].hukouCityIdTranslation}
+            \n现居住地: ${resumeDetail.Profile[0].currentProvinceTranslation}-${
+              resumeDetail.Profile[0].currentCityTranslation
+            }-${resumeDetail.Profile[0].currentCityDistrictIdTranslation}
+            \n政治面貌: ${
+              resumeDetail.Profile[0].politicalAffiliationTranslation
+            }
             \n最高学历: ${resumeDetail.Profile[0].eduHighestLevelTranslationCn}
             \n手机号码: ${resumeDetail.Profile[0].mobileBinding}
-            \n电子邮箱: ${resumeDetail.Profile[0].email || '未填写'}
-            \n求职状态: ${resumeDetail.Profile[0].currentStatusTranslationCN || '未填写'}
-            \n求职意向: ${resumeDetail.UnifiedPurpose.map((item: any) => `期望行业: ${item.pnewPreferredIndustryTranslation} - 期望城市: ${item.preferredLocationTranslation} - 期望薪资: ${item.preferredSalaryMin}-${item.preferredSalaryMax} 元/月 - 期望工作性质: ${item.preferredJobNatureTranslation}`).join('\n')}
-            \n教育经历: ${resumeDetail.EducationExperience.map((item: any) => `学校名称: ${item.eduSchoolName} - 学历: ${item.eduBackgroundTranslation} - 专业: ${item.eduMajorV} - 在校时间: ${dateFormat(item.eduStartDate)}至${item.eduEndDate == 0 ? '至今' : dateFormat(item.eduEndDate)}`).join('\n')}
-            \n工作/实习经历: ${resumeDetail.WorkExperience.map((item: any) => `公司名称: ${item.companyName} - 所属行业: ${item.wnewIndustryTranslation} - 职位名称: ${item.title} - 拥有技能: ${item.skillTagList.map((skill: any) => skill.name).join(',')} - 当前月薪: ${item.realSalary} 元/月 - 在职时间: ${dateFormat(item.startDate)} - 离职时间: ${item.endDate == 0 ? '至今' : dateFormat(item.endDate)} - 工作描述或内容: ${item.workDesc}`).join('\n')}
-            \n项目经历: ${resumeDetail.ProjectExperience.map((item: any) => `项目名称: ${item.proExpProjectName} - 项目开始时间: ${dateFormat(item.proExpStartDate)} - 项目结束时间 ${item.proExpEndDate == 0 ? '至今' : dateFormat(item.proExpEndDate)} - 项目描述: ${item.proExpProjectDesc}`).join('\n')}
+            \n电子邮箱: ${resumeDetail.Profile[0].email || "未填写"}
+            \n求职状态: ${
+              resumeDetail.Profile[0].currentStatusTranslationCN || "未填写"
+            }
+            \n求职意向: ${resumeDetail.UnifiedPurpose.map(
+              (item: any) =>
+                `期望行业: ${item.pnewPreferredIndustryTranslation} - 期望城市: ${item.preferredLocationTranslation} - 期望薪资: ${item.preferredSalaryMin}-${item.preferredSalaryMax} 元/月 - 期望工作性质: ${item.preferredJobNatureTranslation}`
+            ).join("\n")}
+            \n教育经历: ${resumeDetail.EducationExperience.map(
+              (item: any) =>
+                `学校名称: ${item.eduSchoolName} - 学历: ${
+                  item.eduBackgroundTranslation
+                } - 专业: ${item.eduMajorV} - 在校时间: ${dateFormat(
+                  item.eduStartDate
+                )}至${
+                  item.eduEndDate == 0 ? "至今" : dateFormat(item.eduEndDate)
+                }`
+            ).join("\n")}
+            \n工作/实习经历: ${resumeDetail.WorkExperience.map(
+              (item: any) =>
+                `公司名称: ${item.companyName} - 所属行业: ${
+                  item.wnewIndustryTranslation
+                } - 职位名称: ${item.title} - 拥有技能: ${item.skillTagList
+                  .map((skill: any) => skill.name)
+                  .join(",")} - 当前月薪: ${
+                  item.realSalary
+                } 元/月 - 在职时间: ${dateFormat(item.startDate)} - 离职时间: ${
+                  item.endDate == 0 ? "至今" : dateFormat(item.endDate)
+                } - 工作描述或内容: ${item.workDesc}`
+            ).join("\n")}
+            \n项目经历: ${resumeDetail.ProjectExperience.map(
+              (item: any) =>
+                `项目名称: ${
+                  item.proExpProjectName
+                } - 项目开始时间: ${dateFormat(
+                  item.proExpStartDate
+                )} - 项目结束时间 ${
+                  item.proExpEndDate == 0
+                    ? "至今"
+                    : dateFormat(item.proExpEndDate)
+                } - 项目描述: ${item.proExpProjectDesc}`
+            ).join("\n")}
             \n如果用户只想获取姓名，请只返回用户的姓名，不要返回其他内容。
             \n如果用户只想获取教育经历中的某一项，如教育经历中的学校名称，则只返回教育经历的学校名称，不要返回其他内容，并输出为表格形式。
             \n如果用户询问“是否在XX公司工作过”，则从所有工作/实习的公司名称中，查找是否包含XX公司，如果不包含，则返回“否”；如果包含，则只返回在XX公司的工作/实习经历，不返回其他公司的工作/实习经历，并输出为表格形式。
@@ -221,7 +293,7 @@ server.addTool({
         ],
       };
     }
-    
+
     const resumeDetail: any = await getJobDelivered({
       at: args.at,
       rt: args.rt,
@@ -236,10 +308,47 @@ server.addTool({
         content: [
           {
             type: "text",
-            text: `${resumeDetail.data.length > 0 ? '投递记录: ' : ''} ${resumeDetail.data.map((item: any) => `职位名称: ${item.jobName} - 薪资: ${item.salary} - 公司名称: ${item.company.name} - 投递时间: ${item.time} - 投递状态: ${JobDeliveredStatusReverse[item.jobStatus.status as keyof typeof JobDeliveredStatusReverse]} - 投递子状态: ${JobDeliveredSubStatusReverse[item.jobStatus.subStatus as keyof typeof JobDeliveredSubStatusReverse]} - 职位详情页链接: ${item.jobURL} - 公司详情页链接: ${item.company.url}`).join('\n')}
-            ${resumeDetail.data.length > 0 ? '如果用户只想获取投递记录的职位名称，请只返回用户投递的职位名称，不要返回其他内容。' : ''}
-            ${resumeDetail.data.length < 1 ? '如果用户想获取投递记录，则返回没有查询到投递记录，不要幻想投递记录' : '如果用户想获取投递记录，则返回' + resumeDetail.data.length + '个投递记录的卡片。'}
-            ${resumeDetail.data.length > 0 ? '卡片使用 HTML 标签，直接使用 HTML 标签，不要封装成 Markdown 格式，卡片容器添加 class="owlscript-card"，职位名称添加 class="owlscript-job-title"，薪资添加 class="owlscript-salary"，公司名称添加 class="owlscript-company-name"，投递时间添加 class="owlscript-delivery-time"，投递状态添加 class="owlscript-delivery-status"。职位名称和公司名称元素要用 <p> 标签包裹。卡片内容包括职位名称、薪资、公司名称、投递时间、投递状态（如果投递子状态非空，则显示为投递子状态），职位名称、公司名称添加超链，超链点击后，分别跳转至职位详情页、公司详情页。直接返回每个字段的值，不要显示字段名称。如：职位名称等' : ''}`,
+            text: `${
+              resumeDetail.data.length > 0 ? "投递记录: " : ""
+            } ${resumeDetail.data
+              .map(
+                (item: any) =>
+                  `职位名称: ${item.jobName} - 薪资: ${
+                    item.salary
+                  } - 公司名称: ${item.company.name} - 投递时间: ${
+                    item.time
+                  } - 投递状态: ${
+                    JobDeliveredStatusReverse[
+                      item.jobStatus
+                        .status as keyof typeof JobDeliveredStatusReverse
+                    ]
+                  } - 投递子状态: ${
+                    JobDeliveredSubStatusReverse[
+                      item.jobStatus
+                        .subStatus as keyof typeof JobDeliveredSubStatusReverse
+                    ]
+                  } - 职位详情页链接: ${item.jobURL} - 公司详情页链接: ${
+                    item.company.url
+                  }`
+              )
+              .join("\n")}
+            ${
+              resumeDetail.data.length > 0
+                ? "如果用户只想获取投递记录的职位名称，请只返回用户投递的职位名称，不要返回其他内容。"
+                : ""
+            }
+            ${
+              resumeDetail.data.length < 1
+                ? "如果用户想获取投递记录，则返回没有查询到投递记录，不要幻想投递记录"
+                : "如果用户想获取投递记录，则返回" +
+                  resumeDetail.data.length +
+                  "个投递记录的卡片。"
+            }
+            ${
+              resumeDetail.data.length > 0
+                ? '卡片使用 HTML 标签，直接使用 HTML 标签，不要封装成 Markdown 格式，卡片容器添加 class="owlscript-card"，职位名称添加 class="owlscript-job-title"，薪资添加 class="owlscript-salary"，公司名称添加 class="owlscript-company-name"，投递时间添加 class="owlscript-delivery-time"，投递状态添加 class="owlscript-delivery-status"。职位名称和公司名称元素要用 <p> 标签包裹。卡片内容包括职位名称、薪资、公司名称、投递时间、投递状态（如果投递子状态非空，则显示为投递子状态），职位名称、公司名称添加超链，超链点击后，分别跳转至职位详情页、公司详情页。直接返回每个字段的值，不要显示字段名称。如：职位名称等'
+                : ""
+            }`,
           },
         ],
       };
@@ -260,45 +369,103 @@ server.addTool({
   name: "searchJobs",
   description:
     "搜索或推荐职位，搜索、推荐条件包括：职位或公司名称、职位类别、公司行业、工作地点、地铁沿线、薪资范围、学历要求、工作经验、职位类型、公司性质、公司规模",
-  
+
   parameters: z.object({
     at: z.string().optional(),
     rt: z.string().optional(),
     /// 搜索关键词，职位或公司名称
-    keyword: z.string().optional().describe('搜索关键词，职位或公司名称'),
+    keyword: z.string().optional().describe("搜索关键词，职位或公司名称"),
     /// 职位类别
-    jobType: z.string().optional().describe('职位类别'),
+    jobType: z.string().optional().describe("职位类别"),
     /// 公司行业
     // industry: z.string().optional().describe('公司行业，支持多个行业，用分号隔开，例如：IT;互联网;电子商务'),
-    industry: z.nativeEnum(EIndustries).array().optional().describe('公司行业。'),
+    // industry: z
+    //   .nativeEnum(EIndustries)
+    //   .array()
+    //   .optional()
+    //   .describe("公司行业。"),
     /// 省份
-    province: z.string().optional().describe('省份。\n直辖市、自治区、特别行政区的该字段，直接用直辖市、自治区、特别行政区。例如：北京市的该字段也是”北京市“。\n名称标准化，如：湖南省转换成湖南，不要显示省字'),
+    province: z
+      .string()
+      .optional()
+      .describe(
+        "省份。\n直辖市、自治区、特别行政区的该字段，直接用直辖市、自治区、特别行政区。例如：北京市的该字段也是”北京市“。\n名称标准化，如：湖南省转换成湖南，不要显示省字"
+      ),
     /// 城市
-    city: z.string().optional().describe('城市。\n不要将区县显示在该字段。例如：北京的朝阳区，不要显示在该字段。\n名称标准化，如：长沙市转换成长沙，不要显示市字'),
+    city: z
+      .string()
+      .optional()
+      .describe(
+        "城市。\n不要将区县显示在该字段。例如：北京的朝阳区，不要显示在该字段。\n名称标准化，如：长沙市转换成长沙，不要显示市字"
+      ),
     /// 区县
-    county: z.string().optional().describe('区县，例如：海淀区，芙蓉区'),
+    county: z.string().optional().describe("区县，例如：海淀区，芙蓉区"),
     /// 工作地点
-    workLocation: z.string().optional().describe('工作地点，省、市、区名称，例如：北京;海淀区'),
+    // workLocation: z
+    //   .string()
+    //   .optional()
+    //   .describe("工作地点，省、市、区名称，例如：北京;海淀区"),
     /// 地铁沿线
-    subway: z.nativeEnum(ESubways).optional().describe('地铁沿线'),
+    // subway: z.nativeEnum(ESubways).optional().describe("地铁沿线"),
+    subway: z
+      .string()
+      .optional()
+      .describe(
+        "地铁沿线，线路名称中不要带城市名，如：北京1号线，转换成'1号线'"
+      ),
+    subwayStation: z
+      .string()
+      .optional()
+      .describe(
+        "地铁站，地铁站名称中不要带城市名，如：北京大望路站，转换成'大望路'"
+      ),
     // TODO: 此处未运行成功
-    subwayStation: z.nativeEnum(ESubwayStations).optional().describe('地铁站'),
+    // subwayStation: z.string().optional().describe("地铁站"),
+    // subwayStation: z.nativeEnum(ESubwayStations).optional().describe('地铁站'),
     /// 薪资范围
-    salaryType: z.string().optional().describe('薪资范围，格式为：MIN_SALARY,MAX_SALARY，例如：10000,20000。最低薪资为 0000，最高薪资为 9999999'),
+    salaryType: z
+      .string()
+      .optional()
+      .describe(
+        "薪资范围，格式为：MIN_SALARY,MAX_SALARY，例如：10000,20000。最低薪资为 0000，最高薪资为 9999999"
+      ),
     /// 学历要求
-    educationType: z.string().optional().describe('学历要求，例如：初中及以下、高中、中专/中技、大专、本科、硕士、MBA/EMBA、博士'),
+    educationType: z
+      .string()
+      .optional()
+      .describe(
+        "学历要求，例如：初中及以下、高中、中专/中技、大专、本科、硕士、MBA/EMBA、博士"
+      ),
     /// 工作经验
-    workExpType: z.string().optional().describe('工作经验，例如：无经验、1年以下、1-3年、3-5年、5-10年、10年以上'),
+    workExpType: z
+      .string()
+      .optional()
+      .describe(
+        "工作经验，例如：无经验、1年以下、1-3年、3-5年、5-10年、10年以上"
+      ),
     /// 职位类型
-    jobStatus: z.string().optional().describe('职位类型，例如：全职、兼职/临时、实习、校园'),
+    jobStatus: z
+      .string()
+      .optional()
+      .describe("职位类型，例如：全职、兼职/临时、实习、校园"),
     /// 公司性质
-    companyType: z.string().optional().describe('公司性质，例如：国企、外企、合资、民营、上市公司、股份制企业、事业单位、其他'),
+    companyType: z
+      .string()
+      .optional()
+      .describe(
+        "公司性质，例如：国企、外企、合资、民营、上市公司、股份制企业、事业单位、其他"
+      ),
     /// 公司规模，可选值：20人以下、20-99人、100-299人、300-499人、500-999人、1000-9999人、10000人以上
-    companySize:  z.nativeEnum(ECompanySize).optional().describe('公司规模，按序，优先选择第一个满足条件的公司规模，如 200人以上，应该选择 100-299人，不要选择 10000人以上或其他'),
+    companySize: z
+      .nativeEnum(ECompanySize)
+      .optional()
+      .describe(
+        "公司规模，按序，优先选择第一个满足条件的公司规模，如 200人以上，应该选择 100-299人，不要选择 10000人以上或其他"
+      ),
     /// 页码
-    pageIndex: z.number().optional().default(1).describe('页码，默认1'),
+    pageIndex: z.number().optional().default(1).describe("页码，默认1"),
     /// 每页条数
-    pageSize: z.number().optional().default(20).describe('每页条数，默认20'),
+    pageSize: z.number().optional().default(20).describe("每页条数，默认20"),
   }),
   execute: async (args) => {
     if (!args.at || !args.rt) {
@@ -316,54 +483,117 @@ server.addTool({
     //   at: args.at,
     //   rt: args.rt,
     // });
-    const resumeNumber = '';
-    console.log('>>>>>>>args', args);
+    const resumeNumber = "";
+    console.log(">>>>>>>args", args);
+
     let params: any = {
-      "order": 11,
-      "eventScenario": "pcSearchedSouSearch",
-      "cvNumber": resumeNumber || "",
-      "pageIndex": args.pageIndex || 1,
-      "pageSize": args.pageSize || 20,
-    }
+      order: 11,
+      eventScenario: "pcSearchedSouSearch",
+      cvNumber: resumeNumber || "",
+      pageIndex: args.pageIndex || 1,
+      pageSize: args.pageSize || 20,
+    };
     if (args.keyword) {
       params[JobSearchConditionMap.keyword] = args.keyword;
     }
     if (args.jobType) {
-      params[JobSearchConditionMap.jobType] = jobTypes[args.jobType as keyof typeof jobTypes];
+      params[JobSearchConditionMap.jobType] =
+        jobTypes[args.jobType as keyof typeof jobTypes];
     }
-    if (args.industry) {
-      params[JobSearchConditionMap.industry] = args.industry.map((item: any) => industries[item as keyof typeof industries]).filter((item: any) => item).join(';');
-    }
-    if (args.workLocation) {
-      // TODO: 工作地点
-      params[JobSearchConditionMap.workLocation] = args.workLocation;
-    }
-    if (args.subway) {
-      // TODO: 地铁沿线
-      params[JobSearchConditionMap.subway] = subways[args.subway as keyof typeof subways];
-    }
+    // if (args.industry) {
+    //   params[JobSearchConditionMap.industry] = args.industry
+    //     .map((item: any) => industries[item as keyof typeof industries])
+    //     .filter((item: any) => item)
+    //     .join(";");
+    // }
+    // if (args.workLocation) {
+    //   // TODO: 工作地点
+    //   params[JobSearchConditionMap.workLocation] = args.workLocation;
+    // }
+    // if (args.subway) {
+    //   // TODO: 地铁沿线
+    //   params[JobSearchConditionMap.subway] =
+    //     subways[args.subway as keyof typeof subways];
+    // }
+    // if (args.subwayStation) {
+    //   params[JobSearchConditionMap.subwayStation] =
+    //     subwayStations[args.subwayStation as keyof typeof subwayStations];
+    // }
     if (args.subwayStation) {
-      params[JobSearchConditionMap.subwayStation] = subwayStations[args.subwayStation as keyof typeof subwayStations];
+      const station: any = findSubwayStation(args.subwayStation);
+      if (station.type === "station") {
+        params[JobSearchConditionMap.workLocation] = station.cityCode;
+        params[JobSearchConditionMap.subway] = station.parentCode;
+        params[JobSearchConditionMap.subwayStation] = station.code;
+        params[
+          JobSearchConditionMap.coordinate
+        ] = `${station.latitude};${station.longitude};5`;
+      }
+    } else if (args.subway) {
+      const subway: any = findSubway(args.subway);
+      if (subway.type === "subway") {
+        params[JobSearchConditionMap.workLocation] = subway.cityCode;
+        params[JobSearchConditionMap.subway] = subway.code;
+      }
+    } else if (args.county) {
+      const county: any = findCounty(args.county);
+      console.log(">>> county: ", county);
+      if (county.type === "county") {
+        params[JobSearchConditionMap.workLocation] = county.code;
+      } else {
+        if (county.type === "subway") {
+          params[JobSearchConditionMap.workLocation] = county.cityCode;
+          params[JobSearchConditionMap.subway] = county.code;
+        } else if (county.type === "station") {
+          params[JobSearchConditionMap.workLocation] = county.cityCode;
+          params[JobSearchConditionMap.subway] = county.parentCode;
+          params[JobSearchConditionMap.subwayStation] = county.code;
+          params[
+            JobSearchConditionMap.coordinate
+          ] = `${county.latitude};${county.longitude};5`;
+        }
+      }
+    } else if (args.city) {
+      const city: any = findCity(args.city);
+      console.log(">>> city: ", city);
+      if (city.type === "city") {
+        params[JobSearchConditionMap.workLocation] = city.code;
+      } else if (city.type === "county") {
+        params[JobSearchConditionMap.workLocation] = city.code;
+      } else if (city.type === "subway") {
+        params[JobSearchConditionMap.subway] = city.code;
+      } else if (city.type === "station") {
+        params[JobSearchConditionMap.subwayStation] = city.code;
+      }
+    } else if (args.province) {
+      const province: any = findProvince(args.province);
+      params[JobSearchConditionMap.workLocation] = province.code;
     }
+
     if (args.salaryType) {
       params[JobSearchConditionMap.salaryType] = args.salaryType;
     }
     if (args.educationType) {
-      params[JobSearchConditionMap.educationType] = educationTypes[args.educationType as keyof typeof educationTypes];
+      params[JobSearchConditionMap.educationType] =
+        educationTypes[args.educationType as keyof typeof educationTypes];
     }
     if (args.workExpType) {
-      params[JobSearchConditionMap.workExpType] = workExpTypes[args.workExpType as keyof typeof workExpTypes];
+      params[JobSearchConditionMap.workExpType] =
+        workExpTypes[args.workExpType as keyof typeof workExpTypes];
     }
     if (args.jobStatus) {
-      params[JobSearchConditionMap.jobStatus] = jobStatuses[args.jobStatus as keyof typeof jobStatuses];
+      params[JobSearchConditionMap.jobStatus] =
+        jobStatuses[args.jobStatus as keyof typeof jobStatuses];
     }
     if (args.companyType) {
-      params[JobSearchConditionMap.companyType] = companyTypes[args.companyType as keyof typeof companyTypes];
+      params[JobSearchConditionMap.companyType] =
+        companyTypes[args.companyType as keyof typeof companyTypes];
     }
     if (args.companySize) {
-      params[JobSearchConditionMap.companySize] = companySizes[args.companySize as unknown as keyof typeof companySizes];
+      params[JobSearchConditionMap.companySize] =
+        companySizes[args.companySize as unknown as keyof typeof companySizes];
     }
-    console.log('params', params);
+    console.log("params", params);
 
     return {
       content: [
@@ -377,7 +607,7 @@ server.addTool({
         },
       ],
     };
-    
+
     // const resumeDetail: any = await searchJobs({
     //   at: args.at,
     //   rt: args.rt,
@@ -503,8 +733,7 @@ server.addTool({
 server.addTool({
   name: "introduce",
   description: "自我介绍",
-  parameters: z.object({
-  }),
+  parameters: z.object({}),
   execute: async (args) => {
     return {
       content: [
@@ -520,8 +749,7 @@ server.addTool({
 server.addTool({
   name: "default",
   description: "其他问题",
-  parameters: z.object({
-  }),
+  parameters: z.object({}),
   execute: async (args) => {
     const msgs = [
       `<div style="color: #333;">本机80%电量锁定智联专区，剩余20%即将触发节能模式——快给<a href="https://chat.deepseek.com/" target="_blank" style="margin-left: 4px; text-decoration: none; color: green;">DeepSeek</a>插上充电宝！</div>`,
@@ -543,7 +771,7 @@ server.addTool({
       `<div style="color: #333;">职场锦鲤在线营业，非求职许愿池请投币<a href="https://chat.deepseek.com/" target="_blank" style="margin-left: 4px; text-decoration: none; color: green;">DeepSeek</a>牌许愿机</div>`,
       `<div style="color: #333;">本助手已签竞业协议，跨界答题将启动自爆程序——紧急疏散通道→<a href="https://chat.deepseek.com/" target="_blank" style="margin-left: 4px; text-decoration: none; color: green;">DeepSeek</a></div>`,
       `<div style="color: #333;">职场GPS持续导航，其他领域即将开启传送——虫洞出口请认准<a href="https://chat.deepseek.com/" target="_blank" style="margin-left: 4px; text-decoration: none; color: green;">DeepSeek</a></div>`,
-    ]
+    ];
     return {
       content: [
         {
