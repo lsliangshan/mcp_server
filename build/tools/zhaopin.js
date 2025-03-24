@@ -74,3 +74,28 @@ export function getJobDelivered(params) {
         }
     });
 }
+export function searchPositions(params) {
+    return new Promise(async (resolve) => {
+        const apiUrl = `https://fe-api.zhaopin.com/c/i/search/positions`;
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(params),
+        });
+        const data = await response.json();
+        if (data.code == 200 && data.data) {
+            resolve({
+                code: 200,
+                data: data.data,
+            });
+        }
+        else {
+            resolve({
+                code: data.code,
+                data: [],
+            });
+        }
+    });
+}

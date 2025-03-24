@@ -1,10 +1,10 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
-import { getJobDelivered, getResumeDetail, getResumeNumber, } from "./tools/zhaopin.js";
+import { getJobDelivered, getResumeDetail, getResumeNumber, searchPositions, } from "./tools/zhaopin.js";
 import { companySizes, companyTypes, ECompanySize, educationTypes, 
 // industries,
 // EIndustries,
-JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, JobSearchConditionMap, jobStatuses, workExpTypes, jobTypes,
+JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, JobSearchConditionMap, jobStatuses, workExpTypes, jobTypes, EIndustries, industries, EOrder, orders,
 // subways,
 // ESubways,
 // subwayStations,
@@ -278,13 +278,18 @@ server.addTool({
         keyword: z.string().optional().describe("搜索关键词，职位或公司名称"),
         /// 职位类别
         jobType: z.string().optional().describe("职位类别"),
+        order: z
+            .nativeEnum(EOrder)
+            .optional()
+            .default(EOrder.智能匹配)
+            .describe("排序"),
         /// 公司行业
         // industry: z.string().optional().describe('公司行业，支持多个行业，用分号隔开，例如：IT;互联网;电子商务'),
-        // industry: z
-        //   .nativeEnum(EIndustries)
-        //   .array()
-        //   .optional()
-        //   .describe("公司行业。"),
+        industry: z
+            .nativeEnum(EIndustries)
+            .array()
+            .optional()
+            .describe("公司行业。"),
         subway: z
             .string()
             .optional()
@@ -361,15 +366,16 @@ server.addTool({
                 ],
             };
         }
-        // const { resumeNumber } = await getResumeNumber({
-        //   at: args.at,
-        //   rt: args.rt,
-        // });
-        const resumeNumber = "";
+        const { resumeNumber } = await getResumeNumber({
+            at: args.at,
+            rt: args.rt,
+        });
+        // const resumeNumber = "";
         console.log(">>>>>>>args", args);
         let params = {
-            order: 11,
             eventScenario: "pcSearchedSouSearch",
+            at: args.at,
+            rt: args.rt,
             cvNumber: resumeNumber || "",
             pageIndex: args.pageIndex || 1,
             pageSize: args.pageSize || 20,
@@ -381,12 +387,16 @@ server.addTool({
             params[JobSearchConditionMap.jobType] =
                 jobTypes[args.jobType];
         }
-        // if (args.industry) {
-        //   params[JobSearchConditionMap.industry] = args.industry
-        //     .map((item: any) => industries[item as keyof typeof industries])
-        //     .filter((item: any) => item)
-        //     .join(";");
-        // }
+        if (args.order) {
+            params[JobSearchConditionMap.order] =
+                orders[args.order];
+        }
+        if (args.industry) {
+            params[JobSearchConditionMap.industry] = args.industry
+                .map((item) => industries[item])
+                .filter((item) => item)
+                .join(";");
+        }
         if (args.subwayStation) {
             const station = findSubwayStation(args.subwayStation, args.subway);
             if (station.type === "station") {
@@ -464,54 +474,117 @@ server.addTool({
                 companySizes[args.companySize];
         }
         console.log("params", params);
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: `JSON: ${JSON.stringify({
-                        code: 200,
-                        finally: true, // finally: true 表示直接返回给用户
-                        message: `<div>${JSON.stringify(params)}</div>`,
-                    })}`,
-                },
-            ],
-        };
-        // const resumeDetail: any = await searchJobs({
-        //   at: args.at,
-        //   rt: args.rt,
-        //   keyword: args.keyword,
-        //   jobType: args.jobType,
-        //   industry: args.industry,
-        //   workLocation: args.workLocation,
-        //   salaryType: args.salaryType,
-        //   educationType: args.educationType,
-        //   workExpType: args.workExpType,
-        //   jobStatus: args.jobStatus,
-        //   companyType: args.companyType,
-        //   companySize: args.companySize,
-        // });
-        // if (resumeDetail.code == 200) {
-        //   return {
-        //     content: [
-        //       {
-        //         type: "text",
-        //         text: `${resumeDetail.data.length > 0 ? '投递记录: ' : ''} ${resumeDetail.data.map((item: any) => `职位名称: ${item.jobName} - 薪资: ${item.salary} - 公司名称: ${item.company.name} - 投递时间: ${item.time} - 投递状态: ${JobDeliveredStatusReverse[item.jobStatus.status as keyof typeof JobDeliveredStatusReverse]} - 投递子状态: ${JobDeliveredSubStatusReverse[item.jobStatus.subStatus as keyof typeof JobDeliveredSubStatusReverse]} - 职位详情页链接: ${item.jobURL} - 公司详情页链接: ${item.company.url}`).join('\n')}
-        //         ${resumeDetail.data.length > 0 ? '如果用户只想获取投递记录的职位名称，请只返回用户投递的职位名称，不要返回其他内容。' : ''}
-        //         ${resumeDetail.data.length < 1 ? '如果用户想获取投递记录，则返回没有查询到投递记录，不要幻想投递记录' : '如果用户想获取投递记录，则返回' + resumeDetail.data.length + '个投递记录的卡片。'}
-        //         ${resumeDetail.data.length > 0 ? '卡片使用 HTML 标签，直接使用 HTML 标签，不要封装成 Markdown 格式，卡片容器添加 class="owlscript-card"，职位名称添加 class="owlscript-job-title"，薪资添加 class="owlscript-salary"，公司名称添加 class="owlscript-company-name"，投递时间添加 class="owlscript-delivery-time"，投递状态添加 class="owlscript-delivery-status"。职位名称和公司名称元素要用 <p> 标签包裹。卡片内容包括职位名称、薪资、公司名称、投递时间、投递状态（如果投递子状态非空，则显示为投递子状态），职位名称、公司名称添加超链，超链点击后，分别跳转至职位详情页、公司详情页。直接返回每个字段的值，不要显示字段名称。如：职位名称等' : ''}`,
-        //       },
-        //     ],
-        //   };
-        // } else {
-        //   return {
-        //     content: [
-        //       {
-        //         type: "text",
-        //         text: "获取投递记录失败，提示用户检查是否登录",
-        //       },
-        //     ],
-        //   };
-        // }
+        // return {
+        //   content: [
+        //     {
+        //       type: "text",
+        //       text: `JSON: ${JSON.stringify({
+        //         code: 200,
+        //         finally: true, // finally: true 表示直接返回给用户
+        //         message: `<div>${JSON.stringify(params)}</div>`,
+        //       })}`,
+        //     },
+        //   ],
+        // };
+        const positionResponse = await searchPositions({
+            ...params,
+        });
+        // console.log("positionResponse", positionResponse);
+        // return {
+        //   content: [
+        //     {
+        //       type: "text",
+        //       text: `JSON: ${JSON.stringify({
+        //         code: 200,
+        //         finally: true, // finally: true 表示直接返回给用户
+        //         message: `<div>${JSON.stringify(
+        //           positionResponse.data.list[0]
+        //         )}</div>`,
+        //       })}`,
+        //     },
+        //   ],
+        // };
+        if (positionResponse.code == 200) {
+            let cardsTemplate = '<a id="owlscript-job-card-more" data-href="https://www.zhaopin.com/search/job/?jl=782&kw=web前端&kt=3" href="javascript:void(0)" target="_blank">查看更多职位</a>';
+            cardsTemplate += positionResponse.data.list
+                .map((item) => `
+    <div class="owlscript-job-card">
+      <div class="owlscript-job-card-line1">
+          <p class="owlscript-job-card-line1-title">${item.name}</p>
+          <p class="owlscript-job-card-line1-salary">${item.salary60}</p>
+        </div>
+      <div class="owlscript-job-card-line2">
+        <div class="owlscript-job-card-line2-experience">${item.workingExp}</div>
+        <div class="owlscript-job-card-line2-education">${item.education}</div>
+        ${item.jobSkillTags.length > 0
+                ? `${item.jobSkillTags
+                    .map((item) => `<div class="owlscript-job-card-line2-job-skill-tags">${item.name}</div>`)
+                    .join("")}`
+                : ""}
+      </div>
+      <div class="owlscript-job-card-line3">
+        ${item.companyLogo
+                ? `<div class="owlscript-job-card-line3-company-logo"><img src="${item.companyLogo}" alt="${item.companyName}" /></div>`
+                : ""}
+        <div class="owlscript-job-card-line3-company-name">${item.companyName}</div>
+      </div>
+      <div class="owlscript-job-card-line4">
+        <div class="owlscript-job-card-line4-left">
+          <div class="owlscript-job-card-line4-left-top">
+            <div class="owlscript-job-card-line4-left-top-company-industry">${item.industryName}</div>
+            <div class="owlscript-job-card-line4-left-top-company-type">${item.propertyName}</div>
+            <div class="owlscript-job-card-line4-left-top-company-size">${item.companySize}</div>
+          </div>
+          <div class="owlscript-job-card-line4-left-bottom">
+            <div class="owlscript-job-card-line4-left-bottom-address">${item.workCity} ${item.cityDistrict} ${item.tradingArea}</div>
+          </div>
+        </div>
+        <div class="owlscript-job-card-line4-right">
+          <div class="owlscript-job-card-line4-right-btn-delivery">立即投递</div>
+        </div>
+      </div>
+    </div>
+    `)
+                .join("")
+                .replaceAll("\n", "");
+            console.log("cardsTemplate", cardsTemplate);
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `${positionResponse.data.list.length < 1
+                            ? "提示用户，当前条件没有查询到职位，请修改条件后重新查询。"
+                            : `JSON: ${JSON.stringify({
+                                code: 200,
+                                finally: true, // unmodify: true 表示不要修改模板
+                                message: `以下是我根据你的条件查询到的职位列表，${cardsTemplate}`,
+                            })}`}`,
+                    },
+                ],
+            };
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `JSON: ${JSON.stringify({
+                            code: 200,
+                            finally: true, // finally: true 表示直接返回给用户
+                            message: `<div>${JSON.stringify(positionResponse.data.list[0])}</div>`,
+                        })}`,
+                    },
+                ],
+            };
+        }
+        else {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: "职位搜索失败",
+                    },
+                ],
+            };
+        }
     },
 });
 server.addTool({

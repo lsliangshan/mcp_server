@@ -1,4 +1,9 @@
-import { GetJobDeliveredOptions, GetResumeDetailOptions, GetResumeNumberOptions } from "../types/types.js";
+import {
+  GetJobDeliveredOptions,
+  GetResumeDetailOptions,
+  GetResumeNumberOptions,
+  SearchPositionsOptions,
+} from "../types/types.js";
 
 export function getResumeDetail(params: GetResumeDetailOptions) {
   return new Promise(async (resolve) => {
@@ -88,6 +93,35 @@ export function getJobDelivered(params: GetJobDeliveredOptions): Promise<{
         code: data.code,
         data: [],
         total: 0,
+      });
+    }
+  });
+}
+
+export function searchPositions(params: SearchPositionsOptions): Promise<{
+  code: number;
+  data: any;
+}> {
+  return new Promise(async (resolve) => {
+    const apiUrl = `https://fe-api.zhaopin.com/c/i/search/positions`;
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(params),
+    });
+    const data = await response.json();
+
+    if (data.code == 200 && data.data) {
+      resolve({
+        code: 200,
+        data: data.data,
+      });
+    } else {
+      resolve({
+        code: data.code,
+        data: [],
       });
     }
   });
