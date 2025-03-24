@@ -285,6 +285,14 @@ server.addTool({
         //   .array()
         //   .optional()
         //   .describe("公司行业。"),
+        subway: z
+            .string()
+            .optional()
+            .describe("地铁沿线、线路名称中不要带城市名，如：北京1号线，转换成'1号线'"),
+        subwayStation: z
+            .string()
+            .optional()
+            .describe("地铁站。地铁站名称中不要带城市名，如：北京大望路站，转换成'大望路'"),
         /// 省份
         province: z
             .string()
@@ -304,14 +312,6 @@ server.addTool({
         //   .describe("工作地点，省、市、区名称，例如：北京;海淀区"),
         /// 地铁沿线
         // subway: z.nativeEnum(ESubways).optional().describe("地铁沿线"),
-        subway: z
-            .string()
-            .optional()
-            .describe("地铁沿线，线路名称中不要带城市名，如：北京1号线，转换成'1号线'"),
-        subwayStation: z
-            .string()
-            .optional()
-            .describe("地铁站，地铁站名称中不要带城市名，如：北京大望路站，转换成'大望路'"),
         // TODO: 此处未运行成功
         // subwayStation: z.string().optional().describe("地铁站"),
         // subwayStation: z.nativeEnum(ESubwayStations).optional().describe('地铁站'),
@@ -387,21 +387,8 @@ server.addTool({
         //     .filter((item: any) => item)
         //     .join(";");
         // }
-        // if (args.workLocation) {
-        //   // TODO: 工作地点
-        //   params[JobSearchConditionMap.workLocation] = args.workLocation;
-        // }
-        // if (args.subway) {
-        //   // TODO: 地铁沿线
-        //   params[JobSearchConditionMap.subway] =
-        //     subways[args.subway as keyof typeof subways];
-        // }
-        // if (args.subwayStation) {
-        //   params[JobSearchConditionMap.subwayStation] =
-        //     subwayStations[args.subwayStation as keyof typeof subwayStations];
-        // }
         if (args.subwayStation) {
-            const station = findSubwayStation(args.subwayStation);
+            const station = findSubwayStation(args.subwayStation, args.subway);
             if (station.type === "station") {
                 params[JobSearchConditionMap.workLocation] = station.cityCode;
                 params[JobSearchConditionMap.subway] = station.parentCode;
@@ -417,8 +404,7 @@ server.addTool({
             }
         }
         else if (args.county) {
-            const county = findCounty(args.county);
-            console.log(">>> county: ", county);
+            const county = findCounty(args.county, args.city);
             if (county.type === "county") {
                 params[JobSearchConditionMap.workLocation] = county.code;
             }
@@ -437,7 +423,6 @@ server.addTool({
         }
         else if (args.city) {
             const city = findCity(args.city);
-            console.log(">>> city: ", city);
             if (city.type === "city") {
                 params[JobSearchConditionMap.workLocation] = city.code;
             }

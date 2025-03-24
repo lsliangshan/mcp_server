@@ -27329,7 +27329,13 @@ function getCity() {
 
   address.forEach((item) => {
     city = city.concat(
-      item.sublist.filter((itm) => !itm.deleted && itm.name != "不限")
+      item.sublist
+        .map((itm) => {
+          itm.provinceCode = item.code;
+          itm.provinceName = item.name;
+          return itm;
+        })
+        .filter((itm) => !itm.deleted && itm.name != "不限")
     );
   });
 
@@ -27337,8 +27343,8 @@ function getCity() {
     .map(
       (item) =>
         `("${item.code}", "${item.name}", ${item.deleted ? 1 : 0}, "${
-          item.parentCode
-        }")`
+          item.provinceCode
+        }", "${item.provinceName}")`
     )
     .join(",\n");
   console.log(">>> city.length: ", city.length);
@@ -27351,14 +27357,28 @@ function getCounty() {
 
   address.forEach((item) => {
     city = city.concat(
-      item.sublist.filter((itm) => !itm.deleted && itm.name != "不限")
+      item.sublist
+        .map((itm) => {
+          itm.provinceCode = item.code;
+          itm.provinceName = item.name;
+          return itm;
+        })
+        .filter((itm) => !itm.deleted && itm.name != "不限")
     );
   });
 
   let county = [];
   city.forEach((item) => {
     county = county.concat(
-      item.sublist.filter((itm) => !itm.deleted && itm.name != "不限")
+      item.sublist
+        .map((itm) => {
+          itm.provinceCode = item.provinceCode;
+          itm.provinceName = item.provinceName;
+          itm.cityCode = item.code;
+          itm.cityName = item.name;
+          return itm;
+        })
+        .filter((itm) => !itm.deleted && itm.name != "不限")
     );
   });
 
@@ -27366,8 +27386,8 @@ function getCounty() {
     .map(
       (item) =>
         `("${item.code}", "${item.name}", ${item.deleted ? 1 : 0}, "${
-          item.parentCode
-        }")`
+          item.cityCode
+        }", "${item.cityName}", "${item.provinceCode}", "${item.provinceName}")`
     )
     .join(",\n");
   console.log(">>> county.length: ", county.length);
