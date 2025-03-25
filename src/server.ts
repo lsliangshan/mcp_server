@@ -7,36 +7,16 @@ import {
   searchPositions,
 } from "./tools/zhaopin.js";
 import {
-  companySizes,
-  companyTypes,
   ECompanySize,
-  educationTypes,
-  // industries,
-  // EIndustries,
   JobDeliveredStatus,
   JobDeliveredStatusReverse,
   JobDeliveredSubStatus,
   JobDeliveredSubStatusReverse,
-  JobSearchConditionMap,
-  jobStatuses,
-  workExpTypes,
-  jobTypes,
   EIndustries,
-  industries,
   EOrder,
-  orders,
-  // subways,
-  // ESubways,
-  // subwayStations,
+  ESalaryType,
 } from "./types/types.js";
 import { dateFormat } from "./tools/date.js";
-import {
-  findCity,
-  findCounty,
-  findProvince,
-  findSubway,
-  findSubwayStation,
-} from "./tools/db.js";
 import {
   formatMorePositionsUrl,
   formatRequestParams,
@@ -505,7 +485,7 @@ server.addTool({
       delete params.cityCode;
     }
 
-    if (params.S_SOU_SALARY) {
+    if (params.S_SOU_SALARY && params.S_SOU_SALARY.indexOf(",") < 0) {
       params.S_SOU_SALARY =
         params.S_SOU_SALARY.slice(0, params.S_SOU_SALARY.length / 2) +
         "," +
@@ -782,7 +762,7 @@ server.addTool({
       delete params.cityCode;
     }
 
-    if (params.S_SOU_SALARY) {
+    if (params.S_SOU_SALARY && params.S_SOU_SALARY.indexOf(",") < 0) {
       params.S_SOU_SALARY =
         params.S_SOU_SALARY.slice(0, params.S_SOU_SALARY.length / 2) +
         "," +

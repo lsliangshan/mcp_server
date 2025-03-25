@@ -1,14 +1,7 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
 import { getJobDelivered, getResumeDetail, getResumeNumber, searchPositions, } from "./tools/zhaopin.js";
-import { ECompanySize, 
-// industries,
-// EIndustries,
-JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, EIndustries, EOrder,
-// subways,
-// ESubways,
-// subwayStations,
- } from "./types/types.js";
+import { ECompanySize, JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, EIndustries, EOrder, } from "./types/types.js";
 import { dateFormat } from "./tools/date.js";
 import { formatMorePositionsUrl, formatRequestParams, formatResponsePositionsTemplate, getWorkExpCodeByYear, } from "./utils/zhaopin.js";
 // import { ESubwayStations } from "./types/subway_stations.js";
@@ -372,7 +365,7 @@ server.addTool({
             cityCode = params.cityCode;
             delete params.cityCode;
         }
-        if (params.S_SOU_SALARY) {
+        if (params.S_SOU_SALARY && params.S_SOU_SALARY.indexOf(",") < 0) {
             params.S_SOU_SALARY =
                 params.S_SOU_SALARY.slice(0, params.S_SOU_SALARY.length / 2) +
                     "," +
@@ -591,7 +584,7 @@ server.addTool({
             cityCode = params.cityCode;
             delete params.cityCode;
         }
-        if (params.S_SOU_SALARY) {
+        if (params.S_SOU_SALARY && params.S_SOU_SALARY.indexOf(",") < 0) {
             params.S_SOU_SALARY =
                 params.S_SOU_SALARY.slice(0, params.S_SOU_SALARY.length / 2) +
                     "," +

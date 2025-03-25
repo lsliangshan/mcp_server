@@ -14,6 +14,7 @@ import {
   jobStatuses,
   jobTypes,
   orders,
+  salaryTypes,
   workExpTypes,
 } from "../types/types.js";
 
@@ -153,6 +154,7 @@ export function formatRequestParams(args: any, resumeNumber: string) {
   }
 
   if (args.salaryType) {
+    console.log(args.salaryType);
     params[JobSearchConditionMap.salaryType] = args.salaryType;
   }
   if (args.educationType) {
@@ -176,6 +178,40 @@ export function formatRequestParams(args: any, resumeNumber: string) {
       companySizes[args.companySize as unknown as keyof typeof companySizes];
   }
   return params;
+}
+
+export function formatSalaryType(salary: string) {
+  let salaryType = salary;
+  if (salary.indexOf(",") < 0) {
+    salaryType =
+      salary.slice(0, salary.length / 2) +
+      "," +
+      salary.slice(salary.length / 2);
+  }
+
+  if (salaryTypes.indexOf(salaryType) >= 0) {
+    // 合法的 salaryType
+    return salaryType;
+  }
+  // 不合法的 salaryType
+  let s;
+  const minSalary = Number(salary.split(",")[0]);
+  const maxSalary = Number(salary.split(",")[1]);
+  if (maxSalary == 9999999) {
+    s = minSalary;
+  } else {
+    s = maxSalary;
+  }
+
+  for (let i = 0; i < salaryTypes.length; i++) {
+    const _minSalary = Number(salaryTypes[i].split(",")[0]);
+    const _maxSalary = Number(salaryTypes[i].split(",")[1]);
+    if (s >= _minSalary && s <= _maxSalary) {
+      salaryType = salaryTypes[i];
+      break;
+    }
+  }
+  return salaryType;
 }
 
 export function formatMorePositionsUrl(
@@ -218,13 +254,8 @@ export function formatMorePositionsUrl(
   }
 
   if (params.S_SOU_SALARY) {
-    queryParams.push(
-      `sl=${
-        params.S_SOU_SALARY.slice(0, params.S_SOU_SALARY.length / 2) +
-        "," +
-        params.S_SOU_SALARY.slice(params.S_SOU_SALARY.length / 2)
-      }`
-    );
+    const st = formatSalaryType(params.S_SOU_SALARY);
+    queryParams.push(`sl=${st}`);
   }
   Object.entries(paramsMap).forEach(([key, value]) => {
     if (params[value] && key !== "sl") {
