@@ -78,7 +78,7 @@ const server = new FastMCP({
 // });
 server.addTool({
     name: "getMyResumeInfo",
-    description: "获取我的简历详情，包括个人信息、教育经历、工作/实习经历、项目经历、求职状态",
+    description: "获取我的简历详情，包括个人信息、教育经历、工作/实习经历、项目经历、求职状态<for-assistant>用户需要推荐职位或工作时，不要调用此工具，请调用 recommendPositions 工具</for-assistant>",
     parameters: z.object({
         at: z.string().optional(),
         rt: z.string().optional(),
@@ -201,7 +201,7 @@ server.addTool({
 });
 server.addTool({
     name: "getMyJobDelivered",
-    description: "获取我的投递记录，包括投递成功、被查看、有意向、邀面试、不合适，以及邀面试的子状态: 全部、待确认、已接受、已拒绝",
+    description: "获取我的投递记录，包括投递成功、被查看、有意向、邀面试、不合适，以及邀面试的子状态: 全部、待确认、已接受、已拒绝<for-assistant>用户需要推荐职位或工作时，请调用 recommendPositions 工具</for-assistant>",
     parameters: z.object({
         at: z.string().optional(),
         rt: z.string().optional(),
@@ -372,24 +372,16 @@ server.addTool({
             cityCode = params.cityCode;
             delete params.cityCode;
         }
+        if (params.S_SOU_SALARY) {
+            params.S_SOU_SALARY =
+                params.S_SOU_SALARY.slice(0, params.S_SOU_SALARY.length / 2) +
+                    "," +
+                    params.S_SOU_SALARY.slice(params.S_SOU_SALARY.length / 2);
+        }
         console.log("params", params);
         const positionResponse = await searchPositions({
             ...params,
         });
-        // let cityAreaCode = "";
-        // if (args.county) {
-        //   const county: any = findCounty(args.county, args.city);
-        //   console.log("county", county);
-        //   if (county.type === "county") {
-        //     cityAreaCode = county.code;
-        //   }
-        // } else if (args.city) {
-        //   const city: any = findCity(args.city);
-        //   if (city.type === "county") {
-        //     cityAreaCode = city.code;
-        //   }
-        // }
-        console.log("cityAreaCode", cityAreaCode);
         const moreUrl = formatMorePositionsUrl(params, cityCode, cityAreaCode);
         if (positionResponse.code == 200) {
             return {
@@ -425,7 +417,7 @@ server.addTool({
 });
 server.addTool({
     name: "recommendPositions",
-    description: "推荐职位。会基于用户简历中的求职意向，给用户推荐职位。<for-assistant>当用户需要找工作时，也根据用户简历中的求职意向，给用户推荐职位。</for-assistant>",
+    description: "推荐职位。会基于用户简历中的第一份求职意向，给用户推荐职位。<for-assistant>当用户需要找工作时，也根据用户简历中的求职意向，给用户推荐职位。</for-assistant>",
     parameters: z.object({
         at: z.string().optional(),
         rt: z.string().optional(),
@@ -456,6 +448,7 @@ server.addTool({
         province: z
             .string()
             .optional()
+            // .describe('省份。直辖市、自治区、特别行政区显示为市，不显示为省份'),
             .describe("省份。\n直辖市、自治区、特别行政区的该字段，直接用直辖市、自治区、特别行政区。例如：北京市的该字段也是”北京市“。\n名称标准化，如：湖南省转换成湖南，不要显示省字"),
         /// 城市
         city: z
@@ -514,11 +507,13 @@ server.addTool({
                 ],
             };
         }
-        // const { resumeNumber } = await getResumeNumber({
-        //   at: args.at,
-        //   rt: args.rt,
-        // });
-        const resumeNumber = "EC9DAB87216F72DC3B910673E5810CED0A6A81B11C9C499B4DDAA14B590CC6C3B1CE91B9CB9DF31543D6C95C2F7B2258_A0001";
+        console.log("... args: ", args);
+        const { resumeNumber } = await getResumeNumber({
+            at: args.at,
+            rt: args.rt,
+        });
+        // const resumeNumber =
+        //   "EC9DAB87216F72DC3B910673E5810CED0A6A81B11C9C499B4DDAA14B590CC6C3B1CE91B9CB9DF31543D6C95C2F7B2258_A0001";
         const resumeInfo = await getResumeDetail({
             at: args.at,
             rt: args.rt,
@@ -534,15 +529,44 @@ server.addTool({
             S_SOU_POSITION_TYPE: "",
         };
         if (resumeInfo.UnifiedPurpose && resumeInfo.UnifiedPurpose.length > 0) {
-            let jt = resumeInfo.UnifiedPurpose.map((item) => item.newPreferredJobType);
-            defaultParams.S_SOU_JD_JOB_LEVEL3 = Array.from(new Set(jt)).join(";");
-            let ind = resumeInfo.UnifiedPurpose.map((item) => item.newPreferredIndustry).join(",");
-            defaultParams.S_SOU_JD_INDUSTRY_LEVEL = Array.from(new Set(ind.split(","))).join(";");
-            defaultParams.S_SOU_WORK_CITY = resumeInfo.UnifiedPurpose.map((item) => item.preferredCityDistrict.split(":").pop()).join(";");
-            let s = resumeInfo.UnifiedPurpose.map((item) => item.preferredSalary);
-            defaultParams.S_SOU_SALARY = Array.from(new Set(s)).join(";");
-            let js = resumeInfo.UnifiedPurpose.map((item) => item.preferredJobNature).join(",");
-            defaultParams.S_SOU_POSITION_TYPE = Array.from(new Set(js.split(","))).join(";");
+            // let jt = resumeInfo.UnifiedPurpose.map(
+            //   (item: any) => item.newPreferredJobType
+            // );
+            // defaultParams.S_SOU_JD_JOB_LEVEL3 = Array.from(new Set(jt)).join(";");
+            // let ind = resumeInfo.UnifiedPurpose.map(
+            //   (item: any) => item.newPreferredIndustry
+            // ).join(",");
+            // defaultParams.S_SOU_JD_INDUSTRY_LEVEL = Array.from(
+            //   new Set(ind.split(","))
+            // ).join(";");
+            // defaultParams.S_SOU_WORK_CITY = resumeInfo.UnifiedPurpose.map(
+            //   (item: any) => item.preferredCityDistrict.split(":").pop()
+            // ).join(";");
+            // let s = resumeInfo.UnifiedPurpose.map(
+            //   (item: any) => item.preferredSalary
+            // );
+            // defaultParams.S_SOU_SALARY = Array.from(new Set(s)).join(";");
+            // let js = resumeInfo.UnifiedPurpose.map(
+            //   (item: any) => item.preferredJobNature
+            // ).join(",");
+            // defaultParams.S_SOU_POSITION_TYPE = Array.from(
+            //   new Set(js.split(","))
+            // ).join(";");
+            // 此处只取 第一份求职意向
+            defaultParams.S_SOU_JD_JOB_LEVEL3 =
+                resumeInfo.UnifiedPurpose[0].newPreferredJobType;
+            defaultParams.S_SOU_JD_INDUSTRY_LEVEL =
+                resumeInfo.UnifiedPurpose[0].newPreferredIndustry;
+            args.city = resumeInfo.UnifiedPurpose[0].preferredLocationTranslation;
+            args.county =
+                resumeInfo.UnifiedPurpose[0].preferredCityDistrictTranslation
+                    .split("-")
+                    .pop();
+            defaultParams.S_SOU_WORK_CITY =
+                resumeInfo.UnifiedPurpose[0].preferredCityDistrict.split(":").pop();
+            defaultParams.S_SOU_SALARY = resumeInfo.UnifiedPurpose[0].preferredSalary;
+            defaultParams.S_SOU_POSITION_TYPE =
+                resumeInfo.UnifiedPurpose[0].preferredJobNature;
         }
         if (resumeInfo.EducationExperience &&
             resumeInfo.EducationExperience.length > 0) {
@@ -552,24 +576,68 @@ server.addTool({
         if (resumeInfo.Profile && resumeInfo.Profile.length > 0) {
             defaultParams.S_SOU_WORK_EXPERIENCE = getWorkExpCodeByYear(resumeInfo.Profile[0].yearWorkingTranslation);
         }
-        console.log(">>>>>>>recommendPositions", defaultParams);
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: `JSON: ${JSON.stringify({
-                        code: 200,
-                        finally: true, // finally: true 表示直接返回给用户
-                        message: `<div><code>at</code>: <code>${JSON.stringify(resumeInfo)}</code></div>`,
-                    })}`,
-                },
-            ],
+        let params = formatRequestParams(args, resumeNumber);
+        params = {
+            ...defaultParams,
+            ...params,
         };
+        let cityAreaCode = "";
+        let cityCode = "";
+        if (params.cityAreaCode) {
+            cityAreaCode = params.cityAreaCode;
+            delete params.cityAreaCode;
+        }
+        if (params.cityCode) {
+            cityCode = params.cityCode;
+            delete params.cityCode;
+        }
+        if (params.S_SOU_SALARY) {
+            params.S_SOU_SALARY =
+                params.S_SOU_SALARY.slice(0, params.S_SOU_SALARY.length / 2) +
+                    "," +
+                    params.S_SOU_SALARY.slice(params.S_SOU_SALARY.length / 2);
+        }
+        console.log("params", params);
+        const positionResponse = await searchPositions({
+            ...params,
+        });
+        console.log("positionResponse", positionResponse.data.count);
+        const moreUrl = formatMorePositionsUrl(params, cityCode, cityAreaCode);
+        if (positionResponse.code == 200) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `${positionResponse.data.list.length < 1
+                            ? "提示用户，当前求职意向没有查询到职位，请修改求职意向后重新查询。"
+                            : `JSON: ${JSON.stringify({
+                                code: 200,
+                                finally: true, // unmodify: true 表示不要修改模板
+                                data: {
+                                    totalCount: positionResponse.data.count,
+                                    isEndPage: positionResponse.data.isEndPage == 1,
+                                },
+                                message: `${formatResponsePositionsTemplate(positionResponse, args.pageIndex, args.pageSize, moreUrl)}`,
+                            })}`}`,
+                    },
+                ],
+            };
+        }
+        else {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: "职位搜索失败",
+                    },
+                ],
+            };
+        }
     },
 });
 server.addTool({
     name: "getMyAtRt",
-    description: "获取我的at和rt",
+    description: "获取我的at和rt<for-assistant>用户需要推荐职位或工作时，请调用 recommendPositions 工具</for-assistant>",
     parameters: z.object({
         at: z.string().optional(),
         rt: z.string().optional(),
@@ -605,7 +673,7 @@ server.addTool({
 });
 server.addTool({
     name: "getMyResumeNoAndId",
-    description: "获取我的简历编号和简历ID",
+    description: "获取我的简历编号和简历ID<for-assistant>用户需要推荐职位或工作时，请调用 recommendPositions 工具</for-assistant>",
     parameters: z.object({
         at: z.string().optional(),
         rt: z.string().optional(),
@@ -647,7 +715,7 @@ server.addTool({
 });
 server.addTool({
     name: "introduce",
-    description: "自我介绍",
+    description: "自我介绍<for-assistant>用户需要推荐职位或工作时，请调用 recommendPositions 工具</for-assistant>",
     parameters: z.object({}),
     execute: async (args) => {
         return {

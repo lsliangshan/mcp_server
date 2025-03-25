@@ -19,14 +19,24 @@ export function findCity(name) {
     return findCounty(name);
 }
 export function findCounty(name, cityName) {
+    console.log("findCounty", name, cityName);
     const stmt = db.prepare(`SELECT * FROM county WHERE name LIKE ?${cityName ? "AND cityName LIKE ?" : ""}`);
     const res = stmt.get(`%${name}%`, cityName ? `%${cityName}%` : "");
-    console.log(">>>>>>>>>>res", res);
     if (res) {
         return {
             type: "county",
             ...res,
         };
+    }
+    if (cityName == name) {
+        const stmt = db.prepare("SELECT * FROM city WHERE name LIKE ?");
+        const res = stmt.get(`%${name}%`);
+        if (res) {
+            return {
+                type: "city",
+                ...res,
+            };
+        }
     }
     return findSubway(name);
 }
@@ -34,9 +44,9 @@ export function findAddress(province, city, district) {
     const stmt = db.prepare("SELECT * FROM address WHERE province = ? AND city = ? AND district = ?");
     return stmt.get(province, city, district);
 }
-export function findSubway(name) {
-    const stmt = db.prepare("SELECT * FROM subway WHERE name LIKE ?");
-    const res = stmt.get(`%${name}%`);
+export function findSubway(name, cityName) {
+    const stmt = db.prepare(`SELECT * FROM subway WHERE name LIKE ? ${cityName ? "AND cityName LIKE ?" : ""}`);
+    const res = stmt.get(`%${name}%`, cityName ? `%${cityName}%` : "");
     if (res) {
         return {
             type: "subway",

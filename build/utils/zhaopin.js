@@ -79,7 +79,7 @@ export function formatRequestParams(args, resumeNumber) {
         }
     }
     else if (args.subway) {
-        const subway = findSubway(args.subway);
+        const subway = findSubway(args.subway, args.city);
         if (subway.type === "subway") {
             params[JobSearchConditionMap.workLocation] = subway.cityCode;
             params[JobSearchConditionMap.subway] = subway.code;
@@ -106,7 +106,6 @@ export function formatRequestParams(args, resumeNumber) {
     }
     else if (args.city) {
         const city = findCity(args.city);
-        console.log("city", city);
         if (city.type === "city") {
             params[JobSearchConditionMap.workLocation] = city.code;
         }
@@ -127,14 +126,12 @@ export function formatRequestParams(args, resumeNumber) {
     }
     if (args.city) {
         const city = findCity(args.city);
-        console.log("city", city);
         if (city.type === "city") {
             params.cityCode = city.code;
         }
     }
     else if (args.province) {
         const province = findProvince(args.province);
-        console.log("province", province);
         params.cityCode = province.code;
     }
     if (args.salaryType) {
@@ -189,16 +186,19 @@ export function formatMorePositionsUrl(params, cityCode, cityAreaCode) {
         et: "S_SOU_POSITION_TYPE",
         ct: "S_SOU_COMPANY_TYPE",
         cs: "S_SOU_COMPANY_SCALE",
+        order: "order",
     };
     const queryParams = [];
     if (cityAreaCode) {
         queryParams.push(`re=${cityAreaCode}`);
     }
     if (params.S_SOU_SALARY) {
-        queryParams.push(`sl=${params.S_SOU_SALARY}`);
+        queryParams.push(`sl=${params.S_SOU_SALARY.slice(0, params.S_SOU_SALARY.length / 2) +
+            "," +
+            params.S_SOU_SALARY.slice(params.S_SOU_SALARY.length / 2)}`);
     }
     Object.entries(paramsMap).forEach(([key, value]) => {
-        if (params[value]) {
+        if (params[value] && key !== "sl") {
             queryParams.push(`${key}=${params[value]}`);
         }
     });

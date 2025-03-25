@@ -102,7 +102,7 @@ export function formatRequestParams(args: any, resumeNumber: string) {
       ] = `${station.latitude};${station.longitude};5`;
     }
   } else if (args.subway) {
-    const subway: any = findSubway(args.subway);
+    const subway: any = findSubway(args.subway, args.city);
     if (subway.type === "subway") {
       params[JobSearchConditionMap.workLocation] = subway.cityCode;
       params[JobSearchConditionMap.subway] = subway.code;
@@ -127,7 +127,6 @@ export function formatRequestParams(args: any, resumeNumber: string) {
     }
   } else if (args.city) {
     const city: any = findCity(args.city);
-    console.log("city", city);
     if (city.type === "city") {
       params[JobSearchConditionMap.workLocation] = city.code;
     } else if (city.type === "county") {
@@ -145,13 +144,11 @@ export function formatRequestParams(args: any, resumeNumber: string) {
 
   if (args.city) {
     const city: any = findCity(args.city);
-    console.log("city", city);
     if (city.type === "city") {
       params.cityCode = city.code;
     }
   } else if (args.province) {
     const province: any = findProvince(args.province);
-    console.log("province", province);
     params.cityCode = province.code;
   }
 
@@ -212,6 +209,7 @@ export function formatMorePositionsUrl(
     et: "S_SOU_POSITION_TYPE",
     ct: "S_SOU_COMPANY_TYPE",
     cs: "S_SOU_COMPANY_SCALE",
+    order: "order",
   };
   const queryParams = [];
 
@@ -220,10 +218,16 @@ export function formatMorePositionsUrl(
   }
 
   if (params.S_SOU_SALARY) {
-    queryParams.push(`sl=${params.S_SOU_SALARY}`);
+    queryParams.push(
+      `sl=${
+        params.S_SOU_SALARY.slice(0, params.S_SOU_SALARY.length / 2) +
+        "," +
+        params.S_SOU_SALARY.slice(params.S_SOU_SALARY.length / 2)
+      }`
+    );
   }
   Object.entries(paramsMap).forEach(([key, value]) => {
-    if (params[value]) {
+    if (params[value] && key !== "sl") {
       queryParams.push(`${key}=${params[value]}`);
     }
   });
