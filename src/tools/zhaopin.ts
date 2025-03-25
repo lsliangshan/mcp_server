@@ -9,7 +9,7 @@ export function getResumeDetail(params: GetResumeDetailOptions) {
   return new Promise(async (resolve) => {
     const { at, rt, resumeNumber, lang = "1" } = params;
 
-    const apiUrl = `https://fe-api.zhaopin.com/c/i/resume?resumeNumber=${resumeNumber}&lang=${lang}&at=${at}&rt=${rt}`;
+    const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/resume?resumeNumber=${resumeNumber}&lang=${lang}&at=${at}&rt=${rt}`;
 
     const response = await fetch(apiUrl, {
       method: "GET",
@@ -33,7 +33,7 @@ export function getResumeNumber(params: GetResumeNumberOptions): Promise<{
 }> {
   return new Promise(async (resolve) => {
     const { at, rt } = params;
-    const apiUrl = `https://fe-api.zhaopin.com/c/i/user/detail?detail=true&at=${at}&rt=${rt}`;
+    const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/user/detail?detail=true&at=${at}&rt=${rt}`;
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
@@ -103,7 +103,7 @@ export function searchPositions(params: SearchPositionsOptions): Promise<{
   data: any;
 }> {
   return new Promise(async (resolve) => {
-    const apiUrl = `https://fe-api.zhaopin.com/c/i/search/positions`;
+    const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/search/positions`;
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {

@@ -27,11 +27,12 @@ export function findCity(name: string) {
 
 export function findCounty(name: string, cityName?: string) {
   const stmt = db.prepare(
-    `SELECT * FROM county WHERE name LIKE ? ${
+    `SELECT * FROM county WHERE name LIKE ?${
       cityName ? "AND cityName LIKE ?" : ""
     }`
   );
   const res = stmt.get(`%${name}%`, cityName ? `%${cityName}%` : "");
+  console.log(">>>>>>>>>>res", res);
   if (res) {
     return {
       type: "county",

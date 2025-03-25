@@ -1,16 +1,16 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
 import { getJobDelivered, getResumeDetail, getResumeNumber, searchPositions, } from "./tools/zhaopin.js";
-import { companySizes, companyTypes, ECompanySize, educationTypes, 
+import { ECompanySize, 
 // industries,
 // EIndustries,
-JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, JobSearchConditionMap, jobStatuses, workExpTypes, jobTypes, EIndustries, industries, EOrder, orders,
+JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, EIndustries, EOrder,
 // subways,
 // ESubways,
 // subwayStations,
  } from "./types/types.js";
 import { dateFormat } from "./tools/date.js";
-import { findCity, findCounty, findProvince, findSubway, findSubwayStation, } from "./tools/db.js";
+import { formatMorePositionsUrl, formatRequestParams, formatResponsePositionsTemplate, getWorkExpCodeByYear, } from "./utils/zhaopin.js";
 // import { ESubwayStations } from "./types/subway_stations.js";
 const server = new FastMCP({
     name: "zhaopin-server",
@@ -269,8 +269,8 @@ server.addTool({
     },
 });
 server.addTool({
-    name: "searchJobs",
-    description: "搜索或推荐职位，搜索、推荐条件包括：职位或公司名称、职位类别、公司行业、工作地点、地铁沿线、薪资范围、学历要求、工作经验、职位类型、公司性质、公司规模",
+    name: "searchPositions",
+    description: "搜索职位。搜索职位不会基于用户简历中的求职意向。搜索条件包括：职位或公司名称、职位类别、公司行业、工作地点、地铁沿线、薪资范围、学历要求、工作经验、职位类型、公司性质、公司规模<for-assistant>当用户需要推荐职位时，不要调用此工具，应该调用 recommendPositions 工具。</for-assistant>",
     parameters: z.object({
         at: z.string().optional(),
         rt: z.string().optional(),
@@ -284,7 +284,6 @@ server.addTool({
             .default(EOrder.智能匹配)
             .describe("排序"),
         /// 公司行业
-        // industry: z.string().optional().describe('公司行业，支持多个行业，用分号隔开，例如：IT;互联网;电子商务'),
         industry: z
             .nativeEnum(EIndustries)
             .array()
@@ -302,6 +301,7 @@ server.addTool({
         province: z
             .string()
             .optional()
+            // .describe('省份。直辖市、自治区、特别行政区显示为市，不显示为省份'),
             .describe("省份。\n直辖市、自治区、特别行政区的该字段，直接用直辖市、自治区、特别行政区。例如：北京市的该字段也是”北京市“。\n名称标准化，如：湖南省转换成湖南，不要显示省字"),
         /// 城市
         city: z
@@ -310,16 +310,6 @@ server.addTool({
             .describe("城市。\n不要将区县显示在该字段。例如：北京的朝阳区，不要显示在该字段。\n名称标准化，如：长沙市转换成长沙，不要显示市字"),
         /// 区县
         county: z.string().optional().describe("区县，例如：海淀区，芙蓉区"),
-        /// 工作地点
-        // workLocation: z
-        //   .string()
-        //   .optional()
-        //   .describe("工作地点，省、市、区名称，例如：北京;海淀区"),
-        /// 地铁沿线
-        // subway: z.nativeEnum(ESubways).optional().describe("地铁沿线"),
-        // TODO: 此处未运行成功
-        // subwayStation: z.string().optional().describe("地铁站"),
-        // subwayStation: z.nativeEnum(ESubwayStations).optional().describe('地铁站'),
         /// 薪资范围
         salaryType: z
             .string()
@@ -370,184 +360,38 @@ server.addTool({
             at: args.at,
             rt: args.rt,
         });
-        // const resumeNumber = "";
-        console.log(">>>>>>>args", args);
-        let params = {
-            eventScenario: "pcSearchedSouSearch",
-            at: args.at,
-            rt: args.rt,
-            cvNumber: resumeNumber || "",
-            pageIndex: args.pageIndex || 1,
-            pageSize: args.pageSize || 20,
-        };
-        if (args.keyword) {
-            params[JobSearchConditionMap.keyword] = args.keyword;
+        console.log("args", args);
+        const params = formatRequestParams(args, resumeNumber);
+        let cityAreaCode = "";
+        let cityCode = "";
+        if (params.cityAreaCode) {
+            cityAreaCode = params.cityAreaCode;
+            delete params.cityAreaCode;
         }
-        if (args.jobType) {
-            params[JobSearchConditionMap.jobType] =
-                jobTypes[args.jobType];
-        }
-        if (args.order) {
-            params[JobSearchConditionMap.order] =
-                orders[args.order];
-        }
-        if (args.industry) {
-            params[JobSearchConditionMap.industry] = args.industry
-                .map((item) => industries[item])
-                .filter((item) => item)
-                .join(";");
-        }
-        if (args.subwayStation) {
-            const station = findSubwayStation(args.subwayStation, args.subway);
-            if (station.type === "station") {
-                params[JobSearchConditionMap.workLocation] = station.cityCode;
-                params[JobSearchConditionMap.subway] = station.parentCode;
-                params[JobSearchConditionMap.subwayStation] = station.code;
-                params[JobSearchConditionMap.coordinate] = `${station.latitude};${station.longitude};5`;
-            }
-        }
-        else if (args.subway) {
-            const subway = findSubway(args.subway);
-            if (subway.type === "subway") {
-                params[JobSearchConditionMap.workLocation] = subway.cityCode;
-                params[JobSearchConditionMap.subway] = subway.code;
-            }
-        }
-        else if (args.county) {
-            const county = findCounty(args.county, args.city);
-            if (county.type === "county") {
-                params[JobSearchConditionMap.workLocation] = county.code;
-            }
-            else {
-                if (county.type === "subway") {
-                    params[JobSearchConditionMap.workLocation] = county.cityCode;
-                    params[JobSearchConditionMap.subway] = county.code;
-                }
-                else if (county.type === "station") {
-                    params[JobSearchConditionMap.workLocation] = county.cityCode;
-                    params[JobSearchConditionMap.subway] = county.parentCode;
-                    params[JobSearchConditionMap.subwayStation] = county.code;
-                    params[JobSearchConditionMap.coordinate] = `${county.latitude};${county.longitude};5`;
-                }
-            }
-        }
-        else if (args.city) {
-            const city = findCity(args.city);
-            if (city.type === "city") {
-                params[JobSearchConditionMap.workLocation] = city.code;
-            }
-            else if (city.type === "county") {
-                params[JobSearchConditionMap.workLocation] = city.code;
-            }
-            else if (city.type === "subway") {
-                params[JobSearchConditionMap.subway] = city.code;
-            }
-            else if (city.type === "station") {
-                params[JobSearchConditionMap.subwayStation] = city.code;
-            }
-        }
-        else if (args.province) {
-            const province = findProvince(args.province);
-            params[JobSearchConditionMap.workLocation] = province.code;
-        }
-        if (args.salaryType) {
-            params[JobSearchConditionMap.salaryType] = args.salaryType;
-        }
-        if (args.educationType) {
-            params[JobSearchConditionMap.educationType] =
-                educationTypes[args.educationType];
-        }
-        if (args.workExpType) {
-            params[JobSearchConditionMap.workExpType] =
-                workExpTypes[args.workExpType];
-        }
-        if (args.jobStatus) {
-            params[JobSearchConditionMap.jobStatus] =
-                jobStatuses[args.jobStatus];
-        }
-        if (args.companyType) {
-            params[JobSearchConditionMap.companyType] =
-                companyTypes[args.companyType];
-        }
-        if (args.companySize) {
-            params[JobSearchConditionMap.companySize] =
-                companySizes[args.companySize];
+        if (params.cityCode) {
+            cityCode = params.cityCode;
+            delete params.cityCode;
         }
         console.log("params", params);
-        // return {
-        //   content: [
-        //     {
-        //       type: "text",
-        //       text: `JSON: ${JSON.stringify({
-        //         code: 200,
-        //         finally: true, // finally: true 表示直接返回给用户
-        //         message: `<div>${JSON.stringify(params)}</div>`,
-        //       })}`,
-        //     },
-        //   ],
-        // };
         const positionResponse = await searchPositions({
             ...params,
         });
-        // console.log("positionResponse", positionResponse);
-        // return {
-        //   content: [
-        //     {
-        //       type: "text",
-        //       text: `JSON: ${JSON.stringify({
-        //         code: 200,
-        //         finally: true, // finally: true 表示直接返回给用户
-        //         message: `<div>${JSON.stringify(
-        //           positionResponse.data.list[0]
-        //         )}</div>`,
-        //       })}`,
-        //     },
-        //   ],
-        // };
+        // let cityAreaCode = "";
+        // if (args.county) {
+        //   const county: any = findCounty(args.county, args.city);
+        //   console.log("county", county);
+        //   if (county.type === "county") {
+        //     cityAreaCode = county.code;
+        //   }
+        // } else if (args.city) {
+        //   const city: any = findCity(args.city);
+        //   if (city.type === "county") {
+        //     cityAreaCode = city.code;
+        //   }
+        // }
+        console.log("cityAreaCode", cityAreaCode);
+        const moreUrl = formatMorePositionsUrl(params, cityCode, cityAreaCode);
         if (positionResponse.code == 200) {
-            let cardsTemplate = '<a id="owlscript-job-card-more" data-href="https://www.zhaopin.com/search/job/?jl=782&kw=web前端&kt=3" href="javascript:void(0)" target="_blank">查看更多职位</a>';
-            cardsTemplate += positionResponse.data.list
-                .map((item) => `
-    <div class="owlscript-job-card">
-      <div class="owlscript-job-card-line1">
-          <p class="owlscript-job-card-line1-title">${item.name}</p>
-          <p class="owlscript-job-card-line1-salary">${item.salary60}</p>
-        </div>
-      <div class="owlscript-job-card-line2">
-        <div class="owlscript-job-card-line2-experience">${item.workingExp}</div>
-        <div class="owlscript-job-card-line2-education">${item.education}</div>
-        ${item.jobSkillTags.length > 0
-                ? `${item.jobSkillTags
-                    .map((item) => `<div class="owlscript-job-card-line2-job-skill-tags">${item.name}</div>`)
-                    .join("")}`
-                : ""}
-      </div>
-      <div class="owlscript-job-card-line3">
-        ${item.companyLogo
-                ? `<div class="owlscript-job-card-line3-company-logo"><img src="${item.companyLogo}" alt="${item.companyName}" /></div>`
-                : ""}
-        <div class="owlscript-job-card-line3-company-name">${item.companyName}</div>
-      </div>
-      <div class="owlscript-job-card-line4">
-        <div class="owlscript-job-card-line4-left">
-          <div class="owlscript-job-card-line4-left-top">
-            <div class="owlscript-job-card-line4-left-top-company-industry">${item.industryName}</div>
-            <div class="owlscript-job-card-line4-left-top-company-type">${item.propertyName}</div>
-            <div class="owlscript-job-card-line4-left-top-company-size">${item.companySize}</div>
-          </div>
-          <div class="owlscript-job-card-line4-left-bottom">
-            <div class="owlscript-job-card-line4-left-bottom-address">${item.workCity} ${item.cityDistrict} ${item.tradingArea}</div>
-          </div>
-        </div>
-        <div class="owlscript-job-card-line4-right">
-          <div class="owlscript-job-card-line4-right-btn-delivery">立即投递</div>
-        </div>
-      </div>
-    </div>
-    `)
-                .join("")
-                .replaceAll("\n", "");
-            console.log("cardsTemplate", cardsTemplate);
             return {
                 content: [
                     {
@@ -557,20 +401,12 @@ server.addTool({
                             : `JSON: ${JSON.stringify({
                                 code: 200,
                                 finally: true, // unmodify: true 表示不要修改模板
-                                message: `以下是我根据你的条件查询到的职位列表，${cardsTemplate}`,
+                                data: {
+                                    totalCount: positionResponse.data.count,
+                                    isEndPage: positionResponse.data.isEndPage == 1,
+                                },
+                                message: `${formatResponsePositionsTemplate(positionResponse, args.pageIndex, args.pageSize, moreUrl)}`,
                             })}`}`,
-                    },
-                ],
-            };
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `JSON: ${JSON.stringify({
-                            code: 200,
-                            finally: true, // finally: true 表示直接返回给用户
-                            message: `<div>${JSON.stringify(positionResponse.data.list[0])}</div>`,
-                        })}`,
                     },
                 ],
             };
@@ -585,6 +421,150 @@ server.addTool({
                 ],
             };
         }
+    },
+});
+server.addTool({
+    name: "recommendPositions",
+    description: "推荐职位。会基于用户简历中的求职意向，给用户推荐职位。<for-assistant>当用户需要找工作时，也根据用户简历中的求职意向，给用户推荐职位。</for-assistant>",
+    parameters: z.object({
+        at: z.string().optional(),
+        rt: z.string().optional(),
+        /// 搜索关键词，职位或公司名称
+        keyword: z.string().optional().describe("搜索关键词，职位或公司名称"),
+        /// 职位类别
+        jobType: z.string().optional().describe("职位类别"),
+        order: z
+            .nativeEnum(EOrder)
+            .optional()
+            .default(EOrder.智能匹配)
+            .describe("排序"),
+        /// 公司行业
+        industry: z
+            .nativeEnum(EIndustries)
+            .array()
+            .optional()
+            .describe("公司行业。"),
+        subway: z
+            .string()
+            .optional()
+            .describe("地铁沿线、线路名称中不要带城市名，如：北京1号线，转换成'1号线'"),
+        subwayStation: z
+            .string()
+            .optional()
+            .describe("地铁站。地铁站名称中不要带城市名，如：北京大望路站，转换成'大望路'"),
+        /// 省份
+        province: z
+            .string()
+            .optional()
+            .describe("省份。\n直辖市、自治区、特别行政区的该字段，直接用直辖市、自治区、特别行政区。例如：北京市的该字段也是”北京市“。\n名称标准化，如：湖南省转换成湖南，不要显示省字"),
+        /// 城市
+        city: z
+            .string()
+            .optional()
+            .describe("城市。\n不要将区县显示在该字段。例如：北京的朝阳区，不要显示在该字段。\n名称标准化，如：长沙市转换成长沙，不要显示市字"),
+        /// 区县
+        county: z.string().optional().describe("区县，例如：海淀区，芙蓉区"),
+        /// 薪资范围
+        salaryType: z
+            .string()
+            .optional()
+            .describe("薪资范围，格式为：MIN_SALARY,MAX_SALARY，例如：10000,20000。最低薪资为 0000，最高薪资为 9999999"),
+        /// 学历要求
+        educationType: z
+            .string()
+            .optional()
+            .describe("学历要求，例如：初中及以下、高中、中专/中技、大专、本科、硕士、MBA/EMBA、博士"),
+        /// 工作经验
+        workExpType: z
+            .string()
+            .optional()
+            .describe("工作经验，例如：无经验、1年以下、1-3年、3-5年、5-10年、10年以上"),
+        /// 职位类型
+        jobStatus: z
+            .string()
+            .optional()
+            .describe("职位类型，例如：全职、兼职/临时、实习、校园"),
+        /// 公司性质
+        companyType: z
+            .string()
+            .optional()
+            .describe("公司性质，例如：国企、外企、合资、民营、上市公司、股份制企业、事业单位、其他"),
+        /// 公司规模，可选值：20人以下、20-99人、100-299人、300-499人、500-999人、1000-9999人、10000人以上
+        companySize: z
+            .nativeEnum(ECompanySize)
+            .optional()
+            .describe("公司规模，按序，优先选择第一个满足条件的公司规模，如 200人以上，应该选择 100-299人，不要选择 10000人以上或其他"),
+        /// 页码
+        pageIndex: z.number().optional().default(1).describe("页码，默认1"),
+        /// 每页条数
+        pageSize: z.number().optional().default(20).describe("每页条数，默认20"),
+    }),
+    execute: async (args) => {
+        if (!args.at || !args.rt) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `JSON: ${JSON.stringify({
+                            code: 401,
+                            finally: true, // finally: true 表示直接返回给用户
+                            message: "<div><code>at</code>和<code>rt</code>为空</div>",
+                        })}`,
+                    },
+                ],
+            };
+        }
+        // const { resumeNumber } = await getResumeNumber({
+        //   at: args.at,
+        //   rt: args.rt,
+        // });
+        const resumeNumber = "EC9DAB87216F72DC3B910673E5810CED0A6A81B11C9C499B4DDAA14B590CC6C3B1CE91B9CB9DF31543D6C95C2F7B2258_A0001";
+        const resumeInfo = await getResumeDetail({
+            at: args.at,
+            rt: args.rt,
+            resumeNumber,
+        });
+        const defaultParams = {
+            S_SOU_JD_JOB_LEVEL3: "",
+            S_SOU_JD_INDUSTRY_LEVEL: "",
+            S_SOU_WORK_CITY: "",
+            S_SOU_SALARY: "",
+            S_SOU_EDUCATION_LOWESTLEVEL: "",
+            S_SOU_WORK_EXPERIENCE: "",
+            S_SOU_POSITION_TYPE: "",
+        };
+        if (resumeInfo.UnifiedPurpose && resumeInfo.UnifiedPurpose.length > 0) {
+            let jt = resumeInfo.UnifiedPurpose.map((item) => item.newPreferredJobType);
+            defaultParams.S_SOU_JD_JOB_LEVEL3 = Array.from(new Set(jt)).join(";");
+            let ind = resumeInfo.UnifiedPurpose.map((item) => item.newPreferredIndustry).join(",");
+            defaultParams.S_SOU_JD_INDUSTRY_LEVEL = Array.from(new Set(ind.split(","))).join(";");
+            defaultParams.S_SOU_WORK_CITY = resumeInfo.UnifiedPurpose.map((item) => item.preferredCityDistrict.split(":").pop()).join(";");
+            let s = resumeInfo.UnifiedPurpose.map((item) => item.preferredSalary);
+            defaultParams.S_SOU_SALARY = Array.from(new Set(s)).join(";");
+            let js = resumeInfo.UnifiedPurpose.map((item) => item.preferredJobNature).join(",");
+            defaultParams.S_SOU_POSITION_TYPE = Array.from(new Set(js.split(","))).join(";");
+        }
+        if (resumeInfo.EducationExperience &&
+            resumeInfo.EducationExperience.length > 0) {
+            defaultParams.S_SOU_EDUCATION_LOWESTLEVEL =
+                resumeInfo.EducationExperience.map((item) => item.eduBackground).join(";");
+        }
+        if (resumeInfo.Profile && resumeInfo.Profile.length > 0) {
+            defaultParams.S_SOU_WORK_EXPERIENCE = getWorkExpCodeByYear(resumeInfo.Profile[0].yearWorkingTranslation);
+        }
+        console.log(">>>>>>>recommendPositions", defaultParams);
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `JSON: ${JSON.stringify({
+                        code: 200,
+                        finally: true, // finally: true 表示直接返回给用户
+                        message: `<div><code>at</code>: <code>${JSON.stringify(resumeInfo)}</code></div>`,
+                    })}`,
+                },
+            ],
+        };
     },
 });
 server.addTool({
