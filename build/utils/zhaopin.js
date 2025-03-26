@@ -282,7 +282,7 @@ export function formatResponsePositionsTemplate(positionResponse, pageIndex, pag
           </div>
         </div>
         <div class="owlscript-job-card-line4-right">
-          <div class="owlscript-job-card-btn-delivery">立即投递</div>
+          <div class="owlscript-job-card-btn-delivery" data-number="${item.number}" data-city="${item.workCity}">立即投递</div>
         </div>
       </div>
     </div>

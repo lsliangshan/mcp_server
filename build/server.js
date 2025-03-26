@@ -810,16 +810,40 @@ server.addTool({
                 content: [
                     {
                         type: "text",
-                        text: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
+                        text: `JSON: ${JSON.stringify({
+                            code: 200,
+                            message: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
             \n成功投递的职位：${unDelivered
-                            .map((item) => item.number)
-                            .join(",")}
+                                .map((item) => item.number)
+                                .join(",")}
             ${deliveredTemplate}
             ${unvalidTemplate}
             ${useJobNumberTemplate}`,
+                            data: {
+                                action: "delivery-response",
+                                jobNumbers: unDelivered.map((item) => item.number),
+                            },
+                        })}`,
                     },
                 ],
             };
+            // return {
+            //   content: [
+            //     {
+            //       type: "text",
+            //       text: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
+            //       \n成功投递的职位：${unDelivered
+            //         .map((item) => item.number)
+            //         .join(",")}
+            //       ${deliveredTemplate}
+            //       ${unvalidTemplate}
+            //       ${useJobNumberTemplate}`,
+            //       data: {
+            //         jobNumbers: unDelivered.map((item) => item.number),
+            //       },
+            //     },
+            //   ],
+            // };
         }
         return {
             content: [
