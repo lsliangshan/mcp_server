@@ -158,6 +158,12 @@ export function formatRequestParams(args, resumeNumber) {
         params[JobSearchConditionMap.companySize] =
             companySizes[args.companySize];
     }
+    if (!params.at || params.at == "undefined") {
+        delete params.at;
+    }
+    if (!params.rt || params.rt == "undefined") {
+        delete params.rt;
+    }
     return params;
 }
 export function formatSalaryType(salary) {
@@ -293,4 +299,9 @@ export function formatResponsePositionsTemplate(positionResponse, pageIndex, pag
         </div>
       </div>`;
     return beforeTemplate + cardsTemplate;
+}
+export function getReponseTemplate() {
+    return {
+        login: `返回时，使用模板（<a href="https://passport.zhaopin.com/login?bkUrl=%2F%2Fi.zhaopin.com%2Fblank%3Fhttps%3A%2F%2Fwww.zhaopin.com%3FvalidateCampus%3D" target="_blank" class="primary-color">登录智联招聘</a>）替换登录的超链，不要使用 Markdown 格式的超链`,
+    };
 }

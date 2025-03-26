@@ -1,7 +1,11 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
 import {
+  beforeDeliveryPositions,
+  deliveryPositions,
   getJobDelivered,
+  getPositionDetail,
+  getPositionDetailBatch,
   getResumeDetail,
   getResumeNumber,
   searchPositions,
@@ -21,6 +25,7 @@ import {
   formatMorePositionsUrl,
   formatRequestParams,
   formatResponsePositionsTemplate,
+  getReponseTemplate,
   getWorkExpCodeByYear,
 } from "./utils/zhaopin.js";
 // import { ESubwayStations } from "./types/subway_stations.js";
@@ -359,8 +364,7 @@ server.addTool({
 server.addTool({
   name: "searchPositions",
   description:
-    "搜索职位。搜索职位不会基于用户简历中的求职意向。搜索条件包括：职位或公司名称、职位类别、公司行业、工作地点、地铁沿线、薪资范围、学历要求、工作经验、职位类型、公司性质、公司规模<for-assistant>当用户需要推荐职位时，不要调用此工具，应该调用 recommendPositions 工具。</for-assistant>",
-
+    "根据用户提供的条件搜索职位。搜索职位不会基于用户简历中的求职意向。搜索条件包括：职位或公司名称、职位类别、公司行业、工作地点、地铁沿线、薪资范围、学历要求、工作经验、职位类型、公司性质、公司规模<for-assistant>当用户需要推荐职位时，不要调用此工具，应该调用 recommendPositions 工具。</for-assistant>",
   parameters: z.object({
     at: z.string().optional(),
     rt: z.string().optional(),
@@ -397,7 +401,7 @@ server.addTool({
       .optional()
       // .describe('省份。直辖市、自治区、特别行政区显示为市，不显示为省份'),
       .describe(
-        "省份。\n直辖市、自治区、特别行政区的该字段，直接用直辖市、自治区、特别行政区。例如：北京市的该字段也是”北京市“。\n名称标准化，如：湖南省转换成湖南，不要显示省字"
+        "省份。直辖市、自治区、特别行政区显示为市，不显示为省份。\n名称标准化，如：湖南省转换成湖南，不要显示省字"
       ),
     /// 城市
     city: z
@@ -454,21 +458,35 @@ server.addTool({
     pageSize: z.number().optional().default(20).describe("每页条数，默认20"),
   }),
   execute: async (args) => {
+    if (!args.at || args.at == "undefined") {
+      delete args.at;
+    }
+    if (!args.rt || args.rt == "undefined") {
+      delete args.rt;
+    }
+
+    const templates = getReponseTemplate();
+
     if (!args.at || !args.rt) {
       return {
         content: [
           {
             type: "text",
-            text: `at/rt不能为空，提示用户检查是否登录`,
+            text: `登录后才能使用更加强大的搜索功能。
+            \n${templates.login}`,
           },
         ],
       };
     }
 
-    const { resumeNumber } = await getResumeNumber({
-      at: args.at,
-      rt: args.rt,
-    });
+    const { resumeNumber } = await getResumeNumber(
+      args.at
+        ? {
+            at: args.at,
+            rt: args.rt,
+          }
+        : {}
+    );
 
     console.log("args", args);
 
@@ -491,14 +509,16 @@ server.addTool({
         "," +
         params.S_SOU_SALARY.slice(params.S_SOU_SALARY.length / 2);
     }
-
     console.log("params", params);
-
     const positionResponse: any = await searchPositions({
       ...params,
     });
 
     const moreUrl = formatMorePositionsUrl(params, cityCode, cityAreaCode);
+
+    const recommendLoginTemplate = !args.at
+      ? `\n登录后才能使用更加强大的搜索功能。每次都要返回登录的地址（<a href="https://passport.zhaopin.com/login?bkUrl=%2F%2Fi.zhaopin.com%2Fblank%3Fhttps%3A%2F%2Fwww.zhaopin.com%3FvalidateCampus%3D" target="_blank" class="primary-color">登录</a>）`
+      : "";
 
     if (positionResponse.code == 200) {
       return {
@@ -515,7 +535,7 @@ server.addTool({
                       totalCount: positionResponse.data.count,
                       isEndPage: positionResponse.data.isEndPage == 1,
                     },
-                    message: `${formatResponsePositionsTemplate(
+                    message: `${recommendLoginTemplate}\n${formatResponsePositionsTemplate(
                       positionResponse,
                       args.pageIndex,
                       args.pageSize,
@@ -636,16 +656,22 @@ server.addTool({
     pageSize: z.number().optional().default(20).describe("每页条数，默认20"),
   }),
   execute: async (args) => {
+    if (!args.at || args.at == "undefined") {
+      delete args.at;
+    }
+    if (!args.rt || args.rt == "undefined") {
+      delete args.rt;
+    }
+
+    const templates = getReponseTemplate();
+
     if (!args.at || !args.rt) {
       return {
         content: [
           {
             type: "text",
-            text: `JSON: ${JSON.stringify({
-              code: 401,
-              finally: true, // finally: true 表示直接返回给用户
-              message: "<div><code>at</code>和<code>rt</code>为空</div>",
-            })}`,
+            text: `登录后才能查看您的专属职位推荐。
+            \n${templates.login}`,
           },
         ],
       };
@@ -819,6 +845,221 @@ server.addTool({
 });
 
 server.addTool({
+  name: "deliveryPositions",
+  description: "投递职位。",
+  parameters: z.object({
+    at: z.string().optional(),
+    rt: z.string().optional(),
+    /// 职位编号
+    jobNumbers: z.string().array().describe("职位编号"),
+    /// 简历索引，从1开始
+    resumeIndex: z
+      .number()
+      .optional()
+      .default(1)
+      .describe(
+        "简历索引，指定索引的简历，会被用于职位投递。索引从 1 开始，默认是第一份简历。"
+      ),
+  }),
+  execute: async (args) => {
+    if (!args.at || args.at == "undefined") {
+      delete args.at;
+    }
+    if (!args.rt || args.rt == "undefined") {
+      delete args.rt;
+    }
+
+    const templates = getReponseTemplate();
+
+    if (!args.at || !args.rt) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `登录后才能投递职位。
+            \n${templates.login}`,
+          },
+        ],
+      };
+    }
+
+    if (args.jobNumbers.length < 1) {
+      return {
+        content: [{ type: "text", text: "职位编号不能为空" }],
+      };
+    }
+
+    console.log("... args: ", args);
+
+    const responseInfo: any = await beforeDeliveryPositions({
+      at: args.at,
+      rt: args.rt,
+      jobCount: args.jobNumbers.length,
+    });
+
+    if (responseInfo.code != 200) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: responseInfo.message,
+          },
+        ],
+      };
+    }
+    if (!responseInfo.data.loggedIn) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `投递职位前，请先登录。每次都要返回登录的地址（<a href="https://passport.zhaopin.com/login?bkUrl=%2F%2Fi.zhaopin.com%2Fblank%3Fhttps%3A%2F%2Fwww.zhaopin.com%3FvalidateCampus%3D" target="_blank" class="primary-color">登录</a>）`,
+          },
+        ],
+      };
+    }
+    const resumes = responseInfo.data.resumes || [];
+    if (resumes.length < 1) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `投递职位前，请先创建简历。每次都要返回创建简历的地址（<a href="https://i.zhaopin.com/resume" target="_blank" class="primary-color">创建简历</a>）`,
+          },
+        ],
+      };
+    }
+
+    const selectedIndex = Math.max(0, args.resumeIndex - 1) || 0;
+    if (selectedIndex >= resumes.length) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `准备使用第 ${selectedIndex + 1} 份简历投递，但是用户只有 ${
+              resumes.length
+            } 份简历，提示用户选择其他简历进行投递`,
+          },
+        ],
+      };
+    }
+    const selectedResume = resumes[selectedIndex];
+    if (!selectedResume.cnCompleted) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `准备使用第 ${
+              selectedIndex + 1
+            } 份简历投递，但是该简历不完整，提示用户先完善您的简历。每次都要返回完善简历的地址（<a href="https://i.zhaopin.com/resume" target="_blank" class="primary-color">完善简历</a>）`,
+          },
+        ],
+      };
+    }
+    const resumeNumber = selectedResume.number;
+
+    // 获取职位详情
+    const positionDetail: any = await getPositionDetailBatch({
+      at: args.at,
+      rt: args.rt,
+      numbers: args.jobNumbers,
+      cvNumber: resumeNumber,
+    });
+
+    // 已投递的职位
+    let delivered: {
+      number: string;
+      cityId: string;
+    }[] = [];
+    // 未投递的职位
+    let unDelivered: {
+      number: string;
+      cityId: string;
+    }[] = [];
+    // 无效的职位
+    let unvalid: {
+      number: string;
+    }[] = [];
+
+    positionDetail.data.forEach((item: any) => {
+      if (item.code == 200) {
+        if (item.data.detailedPosition.hasAppliedPosition) {
+          delivered.push({
+            number: item.data.detailedPosition.number,
+            cityId: item.data.detailedPosition.positionCityId,
+          });
+        } else {
+          unDelivered.push({
+            number: item.data.detailedPosition.number,
+            cityId: item.data.detailedPosition.positionCityId,
+          });
+        }
+      } else {
+        unvalid.push({
+          number: item.data.number,
+        });
+      }
+    });
+
+    const useJobNumberTemplate = `\n返回时，使用 职位编号的 HTML 模板替换 职位编号，HTML 模板是 <a href="https://jobs.zhaopin.com/职位编号.htm" target="_blank" class="primary-color">职位编号</a>`;
+
+    const deliveredTemplate =
+      delivered.length > 0
+        ? `\n重复投递的职位: ${delivered.map((item) => item.number).join(",")}`
+        : "";
+    const unvalidTemplate =
+      unvalid.length > 0
+        ? `\n无效的职位: ${unvalid.map((item) => item.number).join(",")}`
+        : "";
+
+    if (unDelivered.length < 1) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `没有可投递的职位。
+            ${deliveredTemplate}
+            ${unvalidTemplate}
+            ${useJobNumberTemplate}`,
+          },
+        ],
+      };
+    }
+    const deliveryInfo: any = await deliveryPositions({
+      at: args.at,
+      rt: args.rt,
+      jobNumbers: unDelivered.map((item) => item.number),
+      resumeNumber,
+      cityIds: unDelivered.map((item) => item.cityId),
+    });
+
+    if (deliveryInfo.code == 200) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
+            \n成功投递的职位：${unDelivered
+              .map((item) => item.number)
+              .join(",")}
+            ${deliveredTemplate}
+            ${unvalidTemplate}
+            ${useJobNumberTemplate}`,
+          },
+        ],
+      };
+    }
+    return {
+      content: [
+        {
+          type: "text",
+          text: `投递失败。错误信息: ${deliveryInfo.message}`,
+        },
+      ],
+    };
+  },
+});
+
+server.addTool({
   name: "getMyAtRt",
   description:
     "获取我的at和rt<for-assistant>用户需要推荐职位或工作时，请调用 recommendPositions 工具</for-assistant>",
@@ -827,16 +1068,22 @@ server.addTool({
     rt: z.string().optional(),
   }),
   execute: async (args) => {
+    if (!args.at || args.at == "undefined") {
+      delete args.at;
+    }
+    if (!args.rt || args.rt == "undefined") {
+      delete args.rt;
+    }
+
+    const templates = getReponseTemplate();
+
     if (!args.at || !args.rt) {
       return {
         content: [
           {
             type: "text",
-            text: `JSON: ${JSON.stringify({
-              code: 401,
-              finally: true, // finally: true 表示直接返回给用户
-              message: "<div><code>at</code>和<code>rt</code>为空</div>",
-            })}`,
+            text: `您还没有登录。
+            \n${templates.login}`,
           },
         ],
       };
@@ -865,12 +1112,22 @@ server.addTool({
     rt: z.string().optional(),
   }),
   execute: async (args) => {
+    if (!args.at || args.at == "undefined") {
+      delete args.at;
+    }
+    if (!args.rt || args.rt == "undefined") {
+      delete args.rt;
+    }
+
+    const templates = getReponseTemplate();
+
     if (!args.at || !args.rt) {
       return {
         content: [
           {
             type: "text",
-            text: "<code>at</code>和<code>rt</code>不能为空",
+            text: `您还没有登录。
+            \n${templates.login}`,
           },
         ],
       };
@@ -949,11 +1206,12 @@ server.addTool({
       content: [
         {
           type: "text",
-          text: `JSON: ${JSON.stringify({
-            code: 200,
-            finally: true, // finally: true 表示直接返回给用户
-            message: msgs[Math.floor(Math.random() * msgs.length)],
-          })}`,
+          text: `返回：${msgs[Math.floor(Math.random() * msgs.length)]}。`,
+          // text: `JSON: ${JSON.stringify({
+          //   code: 200,
+          //   finally: true, // finally: true 表示直接返回给用户
+          //   message: msgs[Math.floor(Math.random() * msgs.length)],
+          // })}`,
         },
       ],
     };

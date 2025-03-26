@@ -10,7 +10,14 @@ const db = new Database(
 
 export function findProvince(name: string) {
   const stmt = db.prepare("SELECT * FROM province WHERE name LIKE ?");
-  return stmt.get(`%${name}%`);
+  const res = stmt.get(`%${name}%`);
+  if (res) {
+    return {
+      type: "province",
+      ...res,
+    };
+  }
+  return findCity(name);
 }
 
 export function findCity(name: string) {

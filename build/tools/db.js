@@ -5,7 +5,14 @@ const db = new Database(path.resolve(import.meta.dirname, "../data/zhaopin.db"),
 });
 export function findProvince(name) {
     const stmt = db.prepare("SELECT * FROM province WHERE name LIKE ?");
-    return stmt.get(`%${name}%`);
+    const res = stmt.get(`%${name}%`);
+    if (res) {
+        return {
+            type: "province",
+            ...res,
+        };
+    }
+    return findCity(name);
 }
 export function findCity(name) {
     const stmt = db.prepare("SELECT * FROM city WHERE name LIKE ?");

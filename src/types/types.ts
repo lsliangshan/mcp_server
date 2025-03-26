@@ -26,8 +26,8 @@ export interface GetResumeDetailOptions {
 }
 
 export interface GetResumeNumberOptions {
-  at: string;
-  rt: string;
+  at?: string;
+  rt?: string;
 }
 
 export interface GetJobDeliveredOptions {
@@ -43,8 +43,8 @@ export interface GetJobDeliveredOptions {
 }
 
 export interface SearchPositionsOptions {
-  at: string;
-  rt: string;
+  at?: string;
+  rt?: string;
   /// 职位或公司名称
   S_SOU_FULL_INDEX?: string;
   /// 职位类别
@@ -77,6 +77,50 @@ export interface SearchPositionsOptions {
   eventScenario?: string;
   pageIndex?: number;
   pageSize?: number;
+}
+
+export interface DeliveryPositionsOptions {
+  at: string;
+  rt: string;
+  /// 职位编号
+  jobNumbers: string[];
+  /// 城市编号
+  cityIds?: string[];
+  /// 简历编号
+  resumeNumber?: string;
+}
+
+export interface BeforeDeliveryPositionsOptions {
+  at: string;
+  rt: string;
+  /// 职位编号
+  jobCount: number;
+  /// 是否显示附件选择
+  isShowAttachmentSelect?: boolean;
+  /// 投递动作ID
+  actionId?: string;
+  /// 根组织ID
+  rootOrgId?: string | number;
+  /// 员工ID
+  staffId?: string | number;
+}
+
+export interface GetPositionDetailOptions {
+  at: string;
+  rt: string;
+  /// 职位编号
+  number: string;
+  /// 简历编号
+  cvNumber: string;
+}
+
+export interface GetPositionDetailBatchOptions {
+  at: string;
+  rt: string;
+  /// 职位编号
+  numbers: string[];
+  /// 简历编号
+  cvNumber: string;
 }
 
 export enum JobDeliveredStatusReverse {
@@ -228,6 +272,36 @@ export const jobStatuses = {
   实习: "4",
   校园: "5",
 };
+
+export enum EProvinces {
+  "安徽" = "安徽",
+  "福建" = "福建",
+  "甘肃" = "甘肃",
+  "广东" = "广东",
+  "广西" = "广西",
+  "贵州" = "贵州",
+  "海南" = "海南",
+  "河北" = "河北",
+  "黑龙江" = "黑龙江",
+  "河南" = "河南",
+  "湖北" = "湖北",
+  "湖南" = "湖南",
+  "江苏" = "江苏",
+  "江西" = "江西",
+  "吉林" = "吉林",
+  "辽宁" = "辽宁",
+  "内蒙古" = "内蒙古",
+  "宁夏" = "宁夏",
+  "青海" = "青海",
+  "山东" = "山东",
+  "陕西" = "陕西",
+  "山西" = "山西",
+  "四川" = "四川",
+  "新疆" = "新疆",
+  "西藏" = "西藏",
+  "云南" = "云南",
+  "浙江" = "浙江",
+}
 
 // export const industries = '互联网/IT/电子/通信;电子商务;企业服务;人工智能;智能硬件;在线教育;在线医疗;新媒体;物联网;新零售;区块链;游戏;社交网络;在线招聘/求职;云计算/大数据;网络/信息安全;在线生活服务（O2O）;在线音乐/视频/阅读;互联网;IT服务;计算机软件;计算机硬件;通信/网络设备;运营商/增值服务;电子/半导体/集成电路;消费电子产品;光电子行业;房地产/建筑;房地产开发;土地与公共设施管理;房地产中介;物业管理;建筑设计;工程施工;建筑设备安装;装饰装修;建材;建筑工程检测;金融业;银行;保险;基金;信托;证券/期货;投资/融资;汽车金融;互联网金融/小额贷款;租赁/拍卖/典当/担保;教育培训/科研;培训/辅导服务;学校/学历教育;学术/科研;科学技术推广;广告/传媒/文化/体育;广告/营销;广播/影视;会议/展览;文化艺术/娱乐;体育;新闻/出版;生物医药/医疗;医院;卫生服务;生物工程;医药制造;医疗检测;医药批发/零售;医疗设备/器械;IVD;医美/健康服务;批发/零售/贸易;快速消费品;耐用消费品;零售/批发;食品/饮料;烟草/酒业;日化;服装/纺织/皮革;奢侈品;玩具/礼品;珠宝/首饰;办公用品/设备;工艺品/收藏品/艺术品;家具/家居/家电;贸易/进出口;制造业;船舶/航空/航天/火车制造;电气机械/电力设备;电子设备制造;机器人;钢铁/有色金属冶炼及加工;专用设备制造;军工制造;金属制品业;通用设备制造;仪器仪表制造;摩托车/自行车制造;非金属矿物制品业;新材料;化学纤维制造业;化学原料/化学制品;日化产品制造;纺织业/服饰产品加工制造;农副产品加工制造;燃料资源加工制造;橡胶和塑料制品;文体/办公设备制造;家具制造;印刷/包装/造纸;工业自动化;汽车;汽车研发/制造;新能源汽车;汽车智能互联;汽车零部件;汽车4S店/经销商;汽车后市场;交通运输/仓储/物流;火车站/港口/汽车站/路政;客运服务;货运/物流/仓储;邮政/快递;专业服务;法律服务;咨询服务;翻译服务;人力资源服务;财务/审计/税务;工程技术与设计服务;检测/认证;景区/商业/市场等综合管理;商业代理服务;专利/商标/知识产权;租赁服务;专业技术服务;生活服务;餐饮服务;酒店/民宿;旅游服务;婚庆/摄影;美发/美容/保健;宠物服务;家政服务;回收/维修;休闲/娱乐;搬家/生活配送;居民服务;能源/环保/矿产;石油/石化;化工;电力/水利/热力/燃气;新能源;环保;矿产/采掘;政府/非盈利机构;政府/公共事业;社团/组织/社会保障;养老/孤儿/看护;农/林/牧/渔;农/林/牧/渔'
 
