@@ -183,7 +183,7 @@ export function formatSalaryType(salary) {
     let s;
     const minSalary = Number(salary.split(",")[0]);
     const maxSalary = Number(salary.split(",")[1]);
-    if (maxSalary == 9999999) {
+    if (maxSalary >= 9999999) {
         s = minSalary;
     }
     else {
@@ -192,7 +192,7 @@ export function formatSalaryType(salary) {
     for (let i = 0; i < salaryTypes.length; i++) {
         const _minSalary = Number(salaryTypes[i].split(",")[0]);
         const _maxSalary = Number(salaryTypes[i].split(",")[1]);
-        if (s >= _minSalary && s <= _maxSalary) {
+        if (s >= _minSalary - 1 && s < _maxSalary) {
             salaryType = salaryTypes[i];
             break;
         }
@@ -212,7 +212,7 @@ export function formatMorePositionsUrl(params, cityCode, cityAreaCode) {
         moreUrl += `/in${params.S_SOU_JD_INDUSTRY_LEVEL}`;
     }
     if (params.S_SOU_FULL_INDEX) {
-        moreUrl += `/kw${params.S_SOU_FULL_INDEX}`;
+        moreUrl += `/kw${stringToBase32(params.S_SOU_FULL_INDEX)}`;
     }
     if (params.pageIndex) {
         moreUrl += `/p${params.pageIndex}`;

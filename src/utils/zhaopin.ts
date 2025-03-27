@@ -204,7 +204,7 @@ export function formatSalaryType(salary: string) {
   let s;
   const minSalary = Number(salary.split(",")[0]);
   const maxSalary = Number(salary.split(",")[1]);
-  if (maxSalary == 9999999) {
+  if (maxSalary >= 9999999) {
     s = minSalary;
   } else {
     s = maxSalary;
@@ -213,7 +213,7 @@ export function formatSalaryType(salary: string) {
   for (let i = 0; i < salaryTypes.length; i++) {
     const _minSalary = Number(salaryTypes[i].split(",")[0]);
     const _maxSalary = Number(salaryTypes[i].split(",")[1]);
-    if (s >= _minSalary && s <= _maxSalary) {
+    if (s >= _minSalary - 1 && s < _maxSalary) {
       salaryType = salaryTypes[i];
       break;
     }
@@ -238,7 +238,7 @@ export function formatMorePositionsUrl(
     moreUrl += `/in${params.S_SOU_JD_INDUSTRY_LEVEL}`;
   }
   if (params.S_SOU_FULL_INDEX) {
-    moreUrl += `/kw${params.S_SOU_FULL_INDEX}`;
+    moreUrl += `/kw${stringToBase32(params.S_SOU_FULL_INDEX)}`;
   }
   if (params.pageIndex) {
     moreUrl += `/p${params.pageIndex}`;
@@ -262,6 +262,7 @@ export function formatMorePositionsUrl(
 
   if (params.S_SOU_SALARY) {
     const st = formatSalaryType(params.S_SOU_SALARY);
+
     queryParams.push(`sl=${st}`);
   }
   Object.entries(paramsMap).forEach(([key, value]) => {
