@@ -1123,7 +1123,7 @@ server.addTool({
 server.addTool({
   name: "getMyAtRt",
   description:
-    "获取我的at和rt<for-assistant>用户需要推荐职位或工作时，请调用 recommendPositions 工具</for-assistant>",
+    "获取我的at和rt<for-assistant>用户需要推荐职位或工作时，请调用 recommendPositions 工具</for-assistant><for-assistant>用户需要搜索职位或工作时，请调用 searchPositions 工具</for-assistant>",
   parameters: z.object({
     at: z.string().optional(),
     rt: z.string().optional(),
