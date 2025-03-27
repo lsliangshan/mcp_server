@@ -1022,7 +1022,7 @@ server.start({
     transportType: "sse",
     sse: {
         endpoint: "/sse",
-        port: 8088,
+        port: 9056,
     },
 });
 server.on("connect", (event) => {
