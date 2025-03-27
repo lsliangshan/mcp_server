@@ -108,12 +108,8 @@ export function searchPositions(params: SearchPositionsOptions): Promise<{
   data: any;
 }> {
   return new Promise(async (resolve) => {
-    const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/search/positions${
-      params.at
-        ? ""
-        : "?MmEwMD=5NhjSxyTnsuDHzbm7TZTxPFoCalLdx3Xp1zZW8lOXcAnhYul6aRs.i3d70XS3re.GHJgMiYrS_AL_OF6NNX1tQZQvEU_lnq.8aXuGP4zLcIH8Uouo708dyiZIgC5vuo0uanNXr_IAE4rmSVe0YD25VvdAkCsrE6EQhvTBBsNmAIzpK.uQCBwUSZcVLuswCBplJlfPTZee.LvJxbGZuD7FhzYK7gfqNB.BwOiQTeo7und6fFBeZ8ZsYCR9iIOgKNMkoDhujlOF7IncQzCJM3VJxEKuREHPXLpeIQ9_V2BaIOtL7bmVcw.O5AK1X2WjiFQZzSvVnb9fUHkMKvTlyM54DGNIbWI87UAujpGSEtz0NvT7R.dQ4dtpQDKc6araLB4VPtIdrN9TclYsdQD7lWn_VG&c1K5tw0w6_=4Tf6wtpCkTUgA26XCmdnnJVKFe2Enprz0WcsiznNwgGjC.f97qE0M97.pbwW2M1pgAdKwb5HR0YsweMgvHTr2kuX.qb6jj.F9NbtbjeFp63.nNLee3cXCQeYHH_dG2M5B1jnOLAnhSdPOUvmAElNAx5YY5BOeSPreXuwvJ7kZv3DXUcAEMkfAUwi_iGNspcAs5A8sTtpPphM7eh2XumAJgaM_WoLctZ1lz80EKit.oS0XaYWj3AJiri9mOeR8z00TeO1q45nSlP6W9JBn1JtIDTIETtY0tsXrvAD57Bo4BGPFj9QqZrFyJqUMLfY2I_s1bRhkuS9VZy9cRQIhlj3nvY0eCVSodH.GMPBfTu0zcTGgTmJ1pvlbw1kCSLbwc6SZHpj0rzalEiBCdtN.Y83BeHOkRTL1ayqczewnQvUHsjYBBT1h7_xWrLk3H21emynIQ7nkjnU054RRvt1znFuFPG"
-    }`;
-    console.log("... searchPositions params: ", params);
+    const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/search/positions`;
+
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
@@ -122,7 +118,7 @@ export function searchPositions(params: SearchPositionsOptions): Promise<{
       body: JSON.stringify(params),
     });
     const data = await response.json();
-    console.log("... searchPositions: ", data);
+
     if (data.code == 200 && data.data) {
       resolve({
         code: 200,

@@ -187,13 +187,14 @@ export function formatRequestParams(args: any, resumeNumber: string) {
 }
 
 export function formatSalaryType(salary: string) {
-  let salaryType = salary;
-  if (salary.indexOf(",") < 0) {
-    salaryType =
-      salary.slice(0, salary.length / 2) +
-      "," +
-      salary.slice(salary.length / 2);
-  }
+  // let salaryType = salary;
+  // if (salary.indexOf(",") < 0) {
+  //   salaryType =
+  //     salary.slice(0, salary.length / 2) +
+  //     "," +
+  //     salary.slice(salary.length / 2);
+  // }
+  let salaryType = formatSalary(salary);
 
   if (salaryTypes.indexOf(salaryType) >= 0) {
     // 合法的 salaryType
@@ -272,11 +273,89 @@ export function formatMorePositionsUrl(
   return moreUrl;
 }
 
+// 根据求职意向，组装搜索链接
+// 多份求职意向，组装多个链接
+export function formatMorePositionsUrlWithPurpose(
+  params: any,
+  cityCode: string,
+  cityAreaCode: string,
+  resumeDetail: any
+) {
+  const moreUrls: any[] = [];
+  const baseUrl = `https://www.zhaopin.com/sou`;
+
+  resumeDetail.UnifiedPurpose.forEach((item: any) => {
+    let moreUrl = `${baseUrl}`;
+    if (params.S_SOU_WORK_CITY) {
+      moreUrl += `/jl${cityCode}`;
+    } else {
+      moreUrl += `/jl${item.preferredCityDistrict.split(":").pop()}`;
+    }
+    if (params.S_SOU_JD_JOB_LEVEL3) {
+      moreUrl += `/jt${params.S_SOU_JD_JOB_LEVEL3}`;
+    } else {
+      moreUrl += `/jt${item.newPreferredJobType}`;
+    }
+    if (params.S_SOU_JD_INDUSTRY_LEVEL) {
+      moreUrl += `/in${params.S_SOU_JD_INDUSTRY_LEVEL}`;
+    } else {
+      moreUrl += `/in${item.newPreferredIndustry}`;
+    }
+    if (params.S_SOU_FULL_INDEX) {
+      moreUrl += `/kw${params.S_SOU_FULL_INDEX}`;
+    }
+    if (params.pageIndex) {
+      moreUrl += `/p${params.pageIndex}`;
+    }
+
+    const paramsMap = {
+      li: "S_SOU_SUBWAY_LINE",
+      sc: "S_SOU_SUBWAY_STATION",
+      sl: "S_SOU_SALARY",
+      el: "S_SOU_EDUCATION_LOWESTLEVEL",
+      we: "S_SOU_WORK_EXPERIENCE",
+      et: "S_SOU_POSITION_TYPE",
+      ct: "S_SOU_COMPANY_TYPE",
+      cs: "S_SOU_COMPANY_SCALE",
+      order: "order",
+    };
+    const queryParams = [];
+
+    if (cityAreaCode) {
+      queryParams.push(`re=${cityAreaCode}`);
+    }
+
+    if (params.S_SOU_SALARY) {
+      const st = formatSalaryType(params.S_SOU_SALARY);
+      queryParams.push(`sl=${st}`);
+    } else {
+      const st2 = formatSalaryType(item.preferredSalary);
+      queryParams.push(`sl=${st2}`);
+    }
+
+    if (params.S_SOU_EDUCATION_LOWESTLEVEL) {
+      queryParams.push(`el=${params.S_SOU_EDUCATION_LOWESTLEVEL}`);
+    } else {
+      queryParams.push(`el=${getHighestEducation(item.education)}`);
+    }
+
+    Object.entries(paramsMap).forEach(([key, value]) => {
+      if (params[value] && key !== "sl") {
+        queryParams.push(`${key}=${params[value]}`);
+      }
+    });
+    moreUrl += `?${queryParams.join("&")}`;
+    moreUrls.push(moreUrl);
+  });
+
+  return moreUrls;
+}
+
 export function formatResponsePositionsTemplate(
   positionResponse: any,
   pageIndex: number,
   pageSize: number,
-  moreUrl: string
+  moreUrl?: string
 ) {
   let cardsTemplate = positionResponse.data.list
     .map(
@@ -357,7 +436,13 @@ export function formatResponsePositionsTemplate(
   )}</p> 页</div>
         </div>
         <div class="owlscript-positions-tip-right">
-          <a class="owlscript-job-card-more" href="${moreUrl}" target="_blank">查看全部职位</a>
+          ${
+            moreUrl
+              ? '<a class="owlscript-job-card-more" href="' +
+                moreUrl +
+                '" target="_blank">查看全部职位</a>'
+              : '<a href="javascript:void(0)" target="_blank"></a>'
+          }
         </div>
       </div>`;
   return beforeTemplate + cardsTemplate;
@@ -366,5 +451,43 @@ export function formatResponsePositionsTemplate(
 export function getReponseTemplate() {
   return {
     login: `返回时，使用模板（<a href="https://passport.zhaopin.com/login?bkUrl=%2F%2Fi.zhaopin.com%2Fblank%3Fhttps%3A%2F%2Fwww.zhaopin.com%3FvalidateCampus%3D" target="_blank" class="primary-color">登录智联招聘</a>）替换登录的超链，不要使用 Markdown 格式的超链`,
+    modifyPurpose: `返回时，使用模板（<a href="https://i.zhaopin.com/resume" target="_blank" class="primary-color">修改求职意向</a>）替换修改求职意向的超链，不要使用 Markdown 格式的超链`,
+    jobNumber: `返回时，使用模板（<a href="https://jobs.zhaopin.com/职位编号.htm" target="_blank" class="primary-color">职位编号</a>）替换职位编号，不要使用 Markdown 格式的超链`,
   };
+}
+
+export function formatSalary(salary: string) {
+  let renderSalary = salary;
+
+  if (renderSalary && renderSalary.indexOf(",") < 0) {
+    let minSalary = renderSalary.slice(0, renderSalary.length / 2);
+    let maxSalary = renderSalary.slice(renderSalary.length / 2);
+    if (!minSalary.match(/^0+$/g)) {
+      minSalary = `${Number(minSalary)}`;
+    }
+    maxSalary = `${Number(maxSalary)}`;
+    renderSalary = `${minSalary},${maxSalary}`;
+  }
+  return renderSalary;
+}
+
+// 获取最高学历
+export function getHighestEducation(education: any) {
+  /**
+   * 1: 博士
+   * 10: MBA/EMBA
+   * 3: 硕士
+   * 4: 本科
+   * 5: 大专
+   * 12: 中专/中技
+   * 7: 高中
+   * 9: 初中及以下
+   */
+  const educationList = ["1", "10", "3", "4", "5", "12", "7", "9"];
+  const educationIndexs = education
+    .map((item: any) => `${item.eduBackground}`)
+    .sort(
+      (a: any, b: any) => educationList.indexOf(a) - educationList.indexOf(b)
+    );
+  return educationIndexs[0];
 }

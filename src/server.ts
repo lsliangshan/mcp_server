@@ -25,6 +25,7 @@ import {
   formatMorePositionsUrl,
   formatRequestParams,
   formatResponsePositionsTemplate,
+  formatSalary,
   getReponseTemplate,
   getWorkExpCodeByYear,
 } from "./utils/zhaopin.js";
@@ -364,7 +365,7 @@ server.addTool({
 server.addTool({
   name: "searchPositions",
   description:
-    "根据用户提供的条件搜索职位。搜索职位不会基于用户简历中的求职意向。搜索条件包括：职位或公司名称、职位类别、公司行业、工作地点、地铁沿线、薪资范围、学历要求、工作经验、职位类型、公司性质、公司规模<for-assistant>当用户需要推荐职位时，不要调用此工具，应该调用 recommendPositions 工具。</for-assistant>",
+    "<for-assistant>当用户需要推荐职位时，不要调用此工具，应该调用 recommendPositions 工具。</for-assistant>搜索职位。搜索条件包括：职位或公司名称、职位类别、公司行业、工作地点、地铁沿线、薪资范围、学历要求、工作经验、职位类型、公司性质、公司规模",
   parameters: z.object({
     at: z.string().optional(),
     rt: z.string().optional(),
@@ -503,12 +504,8 @@ server.addTool({
       delete params.cityCode;
     }
 
-    if (params.S_SOU_SALARY && params.S_SOU_SALARY.indexOf(",") < 0) {
-      params.S_SOU_SALARY =
-        params.S_SOU_SALARY.slice(0, params.S_SOU_SALARY.length / 2) +
-        "," +
-        params.S_SOU_SALARY.slice(params.S_SOU_SALARY.length / 2);
-    }
+    params.S_SOU_SALARY = formatSalary(params.S_SOU_SALARY);
+
     console.log("params", params);
     const positionResponse: any = await searchPositions({
       ...params,
@@ -693,7 +690,7 @@ server.addTool({
       resumeNumber,
     });
 
-    const defaultParams = {
+    const defaultParams: any = {
       S_SOU_JD_JOB_LEVEL3: "",
       S_SOU_JD_INDUSTRY_LEVEL: "",
       S_SOU_WORK_CITY: "",
@@ -704,54 +701,59 @@ server.addTool({
     };
 
     if (resumeInfo.UnifiedPurpose && resumeInfo.UnifiedPurpose.length > 0) {
-      // let jt = resumeInfo.UnifiedPurpose.map(
-      //   (item: any) => item.newPreferredJobType
-      // );
-      // defaultParams.S_SOU_JD_JOB_LEVEL3 = Array.from(new Set(jt)).join(";");
+      // 使用用户的全部求职意向
+      let jt = resumeInfo.UnifiedPurpose.map(
+        (item: any) => item.newPreferredJobType
+      );
+      defaultParams.S_SOU_JD_JOB_LEVEL3 = Array.from(new Set(jt)).join(";");
 
-      // let ind = resumeInfo.UnifiedPurpose.map(
-      //   (item: any) => item.newPreferredIndustry
-      // ).join(",");
-      // defaultParams.S_SOU_JD_INDUSTRY_LEVEL = Array.from(
-      //   new Set(ind.split(","))
-      // ).join(";");
+      let ind = resumeInfo.UnifiedPurpose.map(
+        (item: any) => item.newPreferredIndustry
+      ).join(",");
+      defaultParams.S_SOU_JD_INDUSTRY_LEVEL = Array.from(
+        new Set(ind.split(","))
+      ).join(";");
 
-      // defaultParams.S_SOU_WORK_CITY = resumeInfo.UnifiedPurpose.map(
-      //   (item: any) => item.preferredCityDistrict.split(":").pop()
-      // ).join(";");
+      defaultParams.S_SOU_WORK_CITY = resumeInfo.UnifiedPurpose.map(
+        (item: any) => item.preferredCityDistrict.split(":").pop()
+      ).join(";");
 
-      // let s = resumeInfo.UnifiedPurpose.map(
-      //   (item: any) => item.preferredSalary
-      // );
-      // defaultParams.S_SOU_SALARY = Array.from(new Set(s)).join(";");
+      let s = resumeInfo.UnifiedPurpose.map(
+        (item: any) => item.preferredSalary
+      );
+      defaultParams.S_SOU_SALARY = Array.from(new Set(s)).join(";");
 
-      // let js = resumeInfo.UnifiedPurpose.map(
-      //   (item: any) => item.preferredJobNature
-      // ).join(",");
-      // defaultParams.S_SOU_POSITION_TYPE = Array.from(
-      //   new Set(js.split(","))
-      // ).join(";");
+      let js = resumeInfo.UnifiedPurpose.map(
+        (item: any) => item.preferredJobNature
+      ).join(",");
+      defaultParams.S_SOU_POSITION_TYPE = Array.from(
+        new Set(js.split(","))
+      ).join(";");
 
-      // 此处只取 第一份求职意向
-      defaultParams.S_SOU_JD_JOB_LEVEL3 =
-        resumeInfo.UnifiedPurpose[0].newPreferredJobType;
+      // // 此处只取 第一份求职意向
+      // defaultParams.S_SOU_JD_JOB_LEVEL3 =
+      //   resumeInfo.UnifiedPurpose[0].newPreferredJobType;
 
-      defaultParams.S_SOU_JD_INDUSTRY_LEVEL =
-        resumeInfo.UnifiedPurpose[0].newPreferredIndustry;
+      // if (resumeInfo.UnifiedPurpose[0].newPreferredIndustry) {
+      //   defaultParams.S_SOU_JD_INDUSTRY_LEVEL =
+      //     resumeInfo.UnifiedPurpose[0].newPreferredIndustry;
+      // } else {
+      //   delete defaultParams.S_SOU_JD_INDUSTRY_LEVEL;
+      // }
 
-      args.city = resumeInfo.UnifiedPurpose[0].preferredLocationTranslation;
-      args.county =
-        resumeInfo.UnifiedPurpose[0].preferredCityDistrictTranslation
-          .split("-")
-          .pop();
+      // args.city = resumeInfo.UnifiedPurpose[0].preferredLocationTranslation;
+      // args.county =
+      //   resumeInfo.UnifiedPurpose[0].preferredCityDistrictTranslation
+      //     .split("-")
+      //     .pop();
 
-      defaultParams.S_SOU_WORK_CITY =
-        resumeInfo.UnifiedPurpose[0].preferredCityDistrict.split(":").pop();
+      // defaultParams.S_SOU_WORK_CITY =
+      //   resumeInfo.UnifiedPurpose[0].preferredCityDistrict.split(":").pop();
 
-      defaultParams.S_SOU_SALARY = resumeInfo.UnifiedPurpose[0].preferredSalary;
+      // defaultParams.S_SOU_SALARY = resumeInfo.UnifiedPurpose[0].preferredSalary;
 
-      defaultParams.S_SOU_POSITION_TYPE =
-        resumeInfo.UnifiedPurpose[0].preferredJobNature;
+      // defaultParams.S_SOU_POSITION_TYPE =
+      //   resumeInfo.UnifiedPurpose[0].preferredJobNature;
     }
 
     if (
@@ -788,12 +790,7 @@ server.addTool({
       delete params.cityCode;
     }
 
-    if (params.S_SOU_SALARY && params.S_SOU_SALARY.indexOf(",") < 0) {
-      params.S_SOU_SALARY =
-        params.S_SOU_SALARY.slice(0, params.S_SOU_SALARY.length / 2) +
-        "," +
-        params.S_SOU_SALARY.slice(params.S_SOU_SALARY.length / 2);
-    }
+    params.S_SOU_SALARY = formatSalary(params.S_SOU_SALARY);
 
     console.log("params", params);
 
@@ -803,17 +800,40 @@ server.addTool({
 
     console.log("positionResponse", positionResponse.data.count);
 
-    const moreUrl = formatMorePositionsUrl(params, cityCode, cityAreaCode);
+    const moreUrl =
+      resumeInfo.UnifiedPurpose.length == 1
+        ? formatMorePositionsUrl(params, cityCode, cityAreaCode)
+        : "";
 
     if (positionResponse.code == 200) {
+      console.log(
+        "positionResponse.data.list.length",
+        positionResponse.data.list.length
+      );
       return {
         content: [
           {
             type: "text",
             text: `${
               positionResponse.data.list.length < 1
-                ? "提示用户，当前求职意向没有查询到职位，请修改求职意向后重新查询。"
-                : `JSON: ${JSON.stringify({
+                ? `JSON: ${JSON.stringify({
+                    code: 200,
+                    finally: true, // unmodify: true 表示不要修改模板
+                    message: `💡 很抱歉，暂时没有找到与 **您设置的条件** 和 **求职意向** 相匹配的职位
+
+建议尝试：
+
+1️⃣ **放宽筛选条件**（如地区/薪资范围）
+
+2️⃣ **优化求职意向**（点击「<a href="https://i.zhaopin.com/resume" target="_blank" class="primary-color">我的简历</a>」优化求职意向）
+
+或使用搜索工具探索更多机会，搜索工具不会受求职意向限制：
+
+🔍 例如输入『<a href="javascript:void(0)" data-action="send-message" data-message='搜索 ”${args.keyword}“ 相关职位' class="primary-color">搜索 ”${args.keyword}“ 相关职位</a>』`,
+                    // message: `没有符合“当前搜索条件”和“用户的求职意向”的职位。建议修改条件或求职意向后重新查询。也可以使用搜索工具，搜索职位。如：搜索 “${args.keyword}” 相关职位。`,
+                  })}`
+                : // `没有符合“当前搜索条件”和“用户的求职意向”的职位。建议修改条件或求职意向后重新查询。也可以使用搜索工具，搜索职位。如：搜索 “${args.keyword}” 相关职位。`
+                  `JSON: ${JSON.stringify({
                     code: 200,
                     finally: true, // unmodify: true 表示不要修改模板
                     data: {
@@ -882,204 +902,222 @@ server.addTool({
         ],
       };
     }
-
-    if (args.jobNumbers.length < 1) {
-      return {
-        content: [{ type: "text", text: "职位编号不能为空" }],
-      };
-    }
-
     console.log("... args: ", args);
-
-    const responseInfo: any = await beforeDeliveryPositions({
-      at: args.at,
-      rt: args.rt,
-      jobCount: args.jobNumbers.length,
-    });
-
-    if (responseInfo.code != 200) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: responseInfo.message,
-          },
-        ],
-      };
-    }
-    if (!responseInfo.data.loggedIn) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `投递职位前，请先登录。每次都要返回登录的地址（<a href="https://passport.zhaopin.com/login?bkUrl=%2F%2Fi.zhaopin.com%2Fblank%3Fhttps%3A%2F%2Fwww.zhaopin.com%3FvalidateCampus%3D" target="_blank" class="primary-color">登录</a>）`,
-          },
-        ],
-      };
-    }
-    const resumes = responseInfo.data.resumes || [];
-    if (resumes.length < 1) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `投递职位前，请先创建简历。每次都要返回创建简历的地址（<a href="https://i.zhaopin.com/resume" target="_blank" class="primary-color">创建简历</a>）`,
-          },
-        ],
-      };
-    }
-
-    const selectedIndex = Math.max(0, args.resumeIndex - 1) || 0;
-    if (selectedIndex >= resumes.length) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `准备使用第 ${selectedIndex + 1} 份简历投递，但是用户只有 ${
-              resumes.length
-            } 份简历，提示用户选择其他简历进行投递`,
-          },
-        ],
-      };
-    }
-    const selectedResume = resumes[selectedIndex];
-    if (!selectedResume.cnCompleted) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `准备使用第 ${
-              selectedIndex + 1
-            } 份简历投递，但是该简历不完整，提示用户先完善您的简历。每次都要返回完善简历的地址（<a href="https://i.zhaopin.com/resume" target="_blank" class="primary-color">完善简历</a>）`,
-          },
-        ],
-      };
-    }
-    const resumeNumber = selectedResume.number;
-
-    // 获取职位详情
-    const positionDetail: any = await getPositionDetailBatch({
-      at: args.at,
-      rt: args.rt,
-      numbers: args.jobNumbers,
-      cvNumber: resumeNumber,
-    });
-
-    // 已投递的职位
-    let delivered: {
-      number: string;
-      cityId: string;
-    }[] = [];
-    // 未投递的职位
-    let unDelivered: {
-      number: string;
-      cityId: string;
-    }[] = [];
-    // 无效的职位
-    let unvalid: {
-      number: string;
-    }[] = [];
-
-    positionDetail.data.forEach((item: any) => {
-      if (item.code == 200) {
-        if (item.data.detailedPosition.hasAppliedPosition) {
-          delivered.push({
-            number: item.data.detailedPosition.number,
-            cityId: item.data.detailedPosition.positionCityId,
-          });
-        } else {
-          unDelivered.push({
-            number: item.data.detailedPosition.number,
-            cityId: item.data.detailedPosition.positionCityId,
-          });
-        }
-      } else {
-        unvalid.push({
-          number: item.data.number,
-        });
-      }
-    });
-
-    const useJobNumberTemplate = `\n返回时，使用 职位编号的 HTML 模板替换 职位编号，HTML 模板是 <a href="https://jobs.zhaopin.com/职位编号.htm" target="_blank" class="primary-color">职位编号</a>`;
-
-    const deliveredTemplate =
-      delivered.length > 0
-        ? `\n重复投递的职位: ${delivered.map((item) => item.number).join(",")}`
-        : "";
-    const unvalidTemplate =
-      unvalid.length > 0
-        ? `\n无效的职位: ${unvalid.map((item) => item.number).join(",")}`
-        : "";
-
-    if (unDelivered.length < 1) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `没有可投递的职位。
-            ${deliveredTemplate}
-            ${unvalidTemplate}
-            ${useJobNumberTemplate}`,
-          },
-        ],
-      };
-    }
-    const deliveryInfo: any = await deliveryPositions({
-      at: args.at,
-      rt: args.rt,
-      jobNumbers: unDelivered.map((item) => item.number),
-      resumeNumber,
-      cityIds: unDelivered.map((item) => item.cityId),
-    });
-
-    if (deliveryInfo.code == 200) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `JSON: ${JSON.stringify({
-              code: 200,
-              message: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
-            \n成功投递的职位：${unDelivered
-              .map((item) => item.number)
-              .join(",")}
-            ${deliveredTemplate}
-            ${unvalidTemplate}
-            ${useJobNumberTemplate}`,
-              data: {
-                action: "delivery-response",
-                jobNumbers: unDelivered.map((item) => item.number),
-              },
-            })}`,
-          },
-        ],
-      };
-      // return {
-      //   content: [
-      //     {
-      //       type: "text",
-      //       text: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
-      //       \n成功投递的职位：${unDelivered
-      //         .map((item) => item.number)
-      //         .join(",")}
-      //       ${deliveredTemplate}
-      //       ${unvalidTemplate}
-      //       ${useJobNumberTemplate}`,
-      //       data: {
-      //         jobNumbers: unDelivered.map((item) => item.number),
-      //       },
-      //     },
-      //   ],
-      // };
-    }
     return {
       content: [
         {
           type: "text",
-          text: `投递失败。错误信息: ${deliveryInfo.message}`,
+          text: `JSON: ${JSON.stringify({
+            code: 200,
+            message: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
+          \n成功投递的职位：${args.jobNumbers.join(",")}
+          \n${templates.jobNumber}`,
+            data: {
+              action: "delivery-response",
+              jobNumbers: args.jobNumbers,
+            },
+          })}`,
         },
       ],
     };
+
+    // if (args.jobNumbers.length < 1) {
+    //   return {
+    //     content: [{ type: "text", text: "职位编号不能为空" }],
+    //   };
+    // }
+
+    // console.log("... args: ", args);
+
+    // const responseInfo: any = await beforeDeliveryPositions({
+    //   at: args.at,
+    //   rt: args.rt,
+    //   jobCount: args.jobNumbers.length,
+    // });
+
+    // if (responseInfo.code != 200) {
+    //   return {
+    //     content: [
+    //       {
+    //         type: "text",
+    //         text: responseInfo.message,
+    //       },
+    //     ],
+    //   };
+    // }
+    // if (!responseInfo.data.loggedIn) {
+    //   return {
+    //     content: [
+    //       {
+    //         type: "text",
+    //         text: `投递职位前，请先登录。每次都要返回登录的地址（<a href="https://passport.zhaopin.com/login?bkUrl=%2F%2Fi.zhaopin.com%2Fblank%3Fhttps%3A%2F%2Fwww.zhaopin.com%3FvalidateCampus%3D" target="_blank" class="primary-color">登录</a>）`,
+    //       },
+    //     ],
+    //   };
+    // }
+    // const resumes = responseInfo.data.resumes || [];
+    // if (resumes.length < 1) {
+    //   return {
+    //     content: [
+    //       {
+    //         type: "text",
+    //         text: `投递职位前，请先创建简历。每次都要返回创建简历的地址（<a href="https://i.zhaopin.com/resume" target="_blank" class="primary-color">创建简历</a>）`,
+    //       },
+    //     ],
+    //   };
+    // }
+
+    // const selectedIndex = Math.max(0, args.resumeIndex - 1) || 0;
+    // if (selectedIndex >= resumes.length) {
+    //   return {
+    //     content: [
+    //       {
+    //         type: "text",
+    //         text: `准备使用第 ${selectedIndex + 1} 份简历投递，但是用户只有 ${
+    //           resumes.length
+    //         } 份简历，提示用户选择其他简历进行投递`,
+    //       },
+    //     ],
+    //   };
+    // }
+    // const selectedResume = resumes[selectedIndex];
+    // if (!selectedResume.cnCompleted) {
+    //   return {
+    //     content: [
+    //       {
+    //         type: "text",
+    //         text: `准备使用第 ${
+    //           selectedIndex + 1
+    //         } 份简历投递，但是该简历不完整，提示用户先完善您的简历。每次都要返回完善简历的地址（<a href="https://i.zhaopin.com/resume" target="_blank" class="primary-color">完善简历</a>）`,
+    //       },
+    //     ],
+    //   };
+    // }
+    // const resumeNumber = selectedResume.number;
+
+    // // 获取职位详情
+    // const positionDetail: any = await getPositionDetailBatch({
+    //   at: args.at,
+    //   rt: args.rt,
+    //   numbers: args.jobNumbers,
+    //   cvNumber: resumeNumber,
+    // });
+
+    // // 已投递的职位
+    // let delivered: {
+    //   number: string;
+    //   cityId: string;
+    // }[] = [];
+    // // 未投递的职位
+    // let unDelivered: {
+    //   number: string;
+    //   cityId: string;
+    // }[] = [];
+    // // 无效的职位
+    // let unvalid: {
+    //   number: string;
+    // }[] = [];
+
+    // positionDetail.data.forEach((item: any) => {
+    //   if (item.code == 200) {
+    //     if (item.data.detailedPosition.hasAppliedPosition) {
+    //       delivered.push({
+    //         number: item.data.detailedPosition.number,
+    //         cityId: item.data.detailedPosition.positionCityId,
+    //       });
+    //     } else {
+    //       unDelivered.push({
+    //         number: item.data.detailedPosition.number,
+    //         cityId: item.data.detailedPosition.positionCityId,
+    //       });
+    //     }
+    //   } else {
+    //     unvalid.push({
+    //       number: item.data.number,
+    //     });
+    //   }
+    // });
+
+    // const useJobNumberTemplate = `\n返回时，使用 职位编号的 HTML 模板替换 职位编号，HTML 模板是 <a href="https://jobs.zhaopin.com/职位编号.htm" target="_blank" class="primary-color">职位编号</a>`;
+
+    // const deliveredTemplate =
+    //   delivered.length > 0
+    //     ? `\n重复投递的职位: ${delivered.map((item) => item.number).join(",")}`
+    //     : "";
+    // const unvalidTemplate =
+    //   unvalid.length > 0
+    //     ? `\n无效的职位: ${unvalid.map((item) => item.number).join(",")}`
+    //     : "";
+
+    // if (unDelivered.length < 1) {
+    //   return {
+    //     content: [
+    //       {
+    //         type: "text",
+    //         text: `没有可投递的职位。
+    //         ${deliveredTemplate}
+    //         ${unvalidTemplate}
+    //         ${useJobNumberTemplate}`,
+    //       },
+    //     ],
+    //   };
+    // }
+    // const deliveryInfo: any = await deliveryPositions({
+    //   at: args.at,
+    //   rt: args.rt,
+    //   jobNumbers: unDelivered.map((item) => item.number),
+    //   resumeNumber,
+    //   cityIds: unDelivered.map((item) => item.cityId),
+    // });
+
+    // if (deliveryInfo.code == 200) {
+    //   return {
+    //     content: [
+    //       {
+    //         type: "text",
+    //         text: `JSON: ${JSON.stringify({
+    //           code: 200,
+    //           message: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
+    //         \n成功投递的职位：${unDelivered
+    //           .map((item) => item.number)
+    //           .join(",")}
+    //         ${deliveredTemplate}
+    //         ${unvalidTemplate}
+    //         ${useJobNumberTemplate}`,
+    //           data: {
+    //             action: "delivery-response",
+    //             jobNumbers: unDelivered.map((item) => item.number),
+    //           },
+    //         })}`,
+    //       },
+    //     ],
+    //   };
+    //   // return {
+    //   //   content: [
+    //   //     {
+    //   //       type: "text",
+    //   //       text: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
+    //   //       \n成功投递的职位：${unDelivered
+    //   //         .map((item) => item.number)
+    //   //         .join(",")}
+    //   //       ${deliveredTemplate}
+    //   //       ${unvalidTemplate}
+    //   //       ${useJobNumberTemplate}`,
+    //   //       data: {
+    //   //         jobNumbers: unDelivered.map((item) => item.number),
+    //   //       },
+    //   //     },
+    //   //   ],
+    //   // };
+    // }
+    // return {
+    //   content: [
+    //     {
+    //       type: "text",
+    //       text: `投递失败。错误信息: ${deliveryInfo.message}`,
+    //     },
+    //   ],
+    // };
   },
 });
 
