@@ -1,9 +1,9 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
 import { beforeDeliveryPositions, deliveryPositions, getJobDelivered, getPositionDetailBatch, getResumeDetail, getResumeNumber, searchPositions, } from "./tools/zhaopin.js";
-import { ECompanySize, JobDeliveredStatus, JobDeliveredStatusReverse, JobDeliveredSubStatus, JobDeliveredSubStatusReverse, EIndustries, EOrder, } from "./types/types.js";
+import { ECompanySize, JobDeliveredStatus, JobDeliveredSubStatus, EIndustries, EOrder, jobDeliveredStatus, } from "./types/types.js";
 import { dateFormat } from "./tools/date.js";
-import { formatMorePositionsUrl, formatRequestParams, formatResponsePositionsTemplate, formatSalary, getReponseTemplate, getWorkExpCodeByYear, } from "./utils/zhaopin.js";
+import { formatMorePositionsUrl, formatRequestParams, formatResponsePositionsTemplate, formatSalary, getReponseTemplate, getWorkExpCodeByYear, translateToPositions, } from "./utils/zhaopin.js";
 // import { ESubwayStations } from "./types/subway_stations.js";
 const server = new FastMCP({
     name: "zhaopin-server",
@@ -219,20 +219,36 @@ server.addTool({
         const resumeDetail = await getJobDelivered({
             at: args.at,
             rt: args.rt,
-            status: args.status || JobDeliveredStatus.投递成功,
-            subStatus: args.subStatus || JobDeliveredSubStatus.全部,
+            type: args.status || JobDeliveredStatus.全部,
             pageIndex: args.pageIndex || 1,
             pageSize: args.pageSize || 20,
         });
         if (resumeDetail.code == 200) {
+            console.log("... getMyJobDelivered resumeDetail: ", resumeDetail.data);
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `${resumeDetail.data.length < 1
+                            ? `没有查询到投递记录`
+                            : // `没有符合“当前搜索条件”和“用户的求职意向”的职位。建议修改条件或求职意向后重新查询。也可以使用搜索工具，搜索职位。如：搜索 “${args.keyword}” 相关职位。`
+                                `JSON: ${JSON.stringify({
+                                    code: 200,
+                                    finally: true, // unmodify: true 表示不要修改模板
+                                    data: {
+                                        totalCount: resumeDetail.total,
+                                    },
+                                    message: `${formatResponsePositionsTemplate(translateToPositions(resumeDetail.data, resumeDetail.total), args.pageIndex || 1, args.pageSize || 20, "https://i.zhaopin.com/schedule", 'delivery-list')}`,
+                                })}`}`,
+                    },
+                ],
+            };
             return {
                 content: [
                     {
                         type: "text",
                         text: `${resumeDetail.data.length > 0 ? "投递记录: " : ""} ${resumeDetail.data
-                            .map((item) => `职位名称: ${item.jobName} - 薪资: ${item.salary} - 公司名称: ${item.company.name} - 投递时间: ${item.time} - 投递状态: ${JobDeliveredStatusReverse[item.jobStatus
-                            .status]} - 投递子状态: ${JobDeliveredSubStatusReverse[item.jobStatus
-                            .subStatus]} - 职位详情页链接: ${item.jobURL} - 公司详情页链接: ${item.company.url}`)
+                            .map((item) => `职位名称: ${item.jobTitle} - 薪资: ${item.salary} - 公司名称: ${item.companyName} - 投递时间: ${item.msgTime} - 投递状态: ${jobDeliveredStatus[`${item.msgType}`]}`)
                             .join("\n")}
             ${resumeDetail.data.length > 0
                             ? "如果用户只想获取投递记录的职位名称，请只返回用户投递的职位名称，不要返回其他内容。"

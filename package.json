@@ -1,37 +1,28 @@
 {
-  "name": "weather",
+  "name": "owlscript-server",
   "version": "1.0.0",
-  "description": "Weather",
+  "description": "OwlScript Server",
   "main": "build/index.js",
   "type": "module",
-  "bin": {
-    "weather": "./build/index.js"
-  },
   "scripts": {
     "dev": "tsc -w & chmod 755 build/server.js & npx tsx build/server.js",
-    "start": "npx tsx src/server.js"
+    "start": "npx tsx build/server.js",
+    "pm2": "pm2 startOrGracefulReload pm2.json"
   },
   "files": [
     "build"
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "axios": "^1.8.3",
+    "axios": "^1.8.4",
     "better-sqlite3": "^11.9.1",
-    "crypto": "^1.0.1",
-    "crypto-js": "^4.2.0",
     "dotenv": "^16.4.7",
-    "express": "^5.0.1",
     "fastmcp": "^1.20.5",
-    "mime-types": "^2.1.35",
     "uuid": "^11.1.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
-    "@types/crypto-js": "^4.2.2",
-    "@types/express": "^5.0.0",
-    "@types/mime-types": "^2.1.4",
     "@types/node": "^22.13.10",
     "typescript": "^5.8.2"
   }

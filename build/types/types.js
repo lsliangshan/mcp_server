@@ -2,6 +2,11 @@ import allJobTypes from "../data/job_types.json" with { type: "json" };
 import allIndustries from "../data/industries.json" with { type: "json" };
 // import allSubways from '../data/subways.json' with { type: "json" };
 // import allSubwayStations from '../data/subway_stations.json' with { type: "json" };
+export var Urls;
+(function (Urls) {
+    Urls["zhaopin"] = "https://fe-api.zhaopin.com";
+    Urls["zhaopin_m"] = "https://m.zhaopin.com";
+})(Urls || (Urls = {}));
 export var XF_URL;
 (function (XF_URL) {
     XF_URL["recognizeImage"] = "https://api.xf-yun.com/v1/private/sf8e6aca1";
@@ -21,13 +26,20 @@ export var JobDeliveredSubStatusReverse;
     JobDeliveredSubStatusReverse["accepted"] = "\u5DF2\u63A5\u53D7";
     JobDeliveredSubStatusReverse["refused"] = "\u5DF2\u62D2\u7EDD";
 })(JobDeliveredSubStatusReverse || (JobDeliveredSubStatusReverse = {}));
+export const jobDeliveredStatus = {
+    "1": "已投递",
+    "10": "被查看",
+    "22": "有意向",
+    "356": "邀面试",
+    "4": "不合适",
+};
 export var JobDeliveredStatus;
 (function (JobDeliveredStatus) {
-    JobDeliveredStatus["\u6295\u9012\u6210\u529F"] = "send";
-    JobDeliveredStatus["\u88AB\u67E5\u770B"] = "viewed";
-    JobDeliveredStatus["\u6709\u610F\u5411"] = "intersted";
-    JobDeliveredStatus["\u9080\u9762\u8BD5"] = "interviewed";
-    JobDeliveredStatus["\u4E0D\u5408\u9002"] = "unsuitable";
+    JobDeliveredStatus["\u5168\u90E8"] = "0";
+    JobDeliveredStatus["\u88AB\u67E5\u770B"] = "10";
+    JobDeliveredStatus["\u6709\u610F\u5411"] = "22";
+    JobDeliveredStatus["\u9080\u9762\u8BD5"] = "356";
+    JobDeliveredStatus["\u4E0D\u5408\u9002"] = "4";
 })(JobDeliveredStatus || (JobDeliveredStatus = {}));
 export var JobDeliveredSubStatus;
 (function (JobDeliveredSubStatus) {

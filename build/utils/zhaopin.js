@@ -1,5 +1,5 @@
 import { findCity, findCounty, findProvince, findSubway, findSubwayStation, } from "../tools/db.js";
-import { companySizes, companyTypes, educationTypes, industries, JobSearchConditionMap, jobStatuses, jobTypes, orders, salaryTypes, workExpTypes, } from "../types/types.js";
+import { companySizes, companyTypes, educationTypes, industries, jobDeliveredStatus, JobSearchConditionMap, jobStatuses, jobTypes, orders, salaryTypes, workExpTypes, } from "../types/types.js";
 const BASE32_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
 // 将字符转换为32进制
 function toBase32Char(binaryStr) {
@@ -314,62 +314,132 @@ export function formatMorePositionsUrlWithPurpose(params, cityCode, cityAreaCode
     });
     return moreUrls;
 }
-export function formatResponsePositionsTemplate(positionResponse, pageIndex, pageSize, moreUrl) {
-    let cardsTemplate = positionResponse.data.list
-        .map((item) => `
+export function translateToPositions(delivered, total) {
+    console.log("... translateToPositions delivered: ", delivered[0].jobDetail.feedbackInfo);
+    return {
+        data: {
+            list: delivered.map((item) => ({
+                positionUrl: `https://jobs.zhaopin.com/${item.jobDetail.feedbackInfo.jobNumber}.htm`,
+                name: item.jobTitle,
+                salary60: item.salary,
+                workingExp: item.jobDetail.feedbackInfo.workExperience,
+                education: item.education,
+                jobSkillTags: [],
+                companyLogo: item.companyLogUrl,
+                companyName: item.companyName,
+                companyUrl: '',
+                industryName: '',
+                propertyName: '',
+                companySize: '',
+                workCity: item.city,
+                cityDistrict: '',
+                tradingArea: '',
+                streetName: '',
+                number: item.jobDetail.feedbackInfo.jobNumber,
+            })),
+            count: total,
+        }
+    };
+    // return {
+    //   positionUrl: `https://jobs.zhaopin.com/${delivered.jobDetail.feedbackInfo.jobNumber}.htm`,
+    //   name: delivered.jobTitle,
+    //   salary60: delivered.salary,
+    //   workingExp: delivered.jobDetail.feedbackInfo.workExperience,
+    //   education: delivered.education,
+    //   jobSkillTags: [],
+    //   companyLogo: delivered.companyLogUrl,
+    //   companyName: delivered.companyName,
+    //   companyUrl: '',
+    //   industryName: '',
+    //   propertyName: '',
+    //   companySize: '',
+    //   workCity: '',
+    //   cityDistrict: '',
+    //   tradingArea: '',
+    //   streetName: '',
+    //   number: delivered.jobDetail.feedbackInfo.jobNumber,
+    // };
+}
+export function jobCardTemplate(jobInfo, type = 'card-list') {
+    let btn = '';
+    if (type === 'delivery-list') {
+        btn = `<div class="owlscript-job-card-btn-status">${jobDeliveredStatus[jobInfo.msgType.toString()]}</div>`;
+    }
+    else {
+        btn = `<div class="owlscript-job-card-btn-delivery" data-number="${jobInfo.number}" data-city="${jobInfo.workCity}">查看投递详情</div>`;
+    }
+    return `
     <div class="owlscript-job-card">
       <div class="owlscript-job-card-line1">
           <p class="owlscript-job-card-line1-title">
-            <a href="${item.positionUrl}" target="_blank">${item.name}</a>
+            <a href="${jobInfo.positionUrl}" target="_blank">${jobInfo.name}</a>
           </p>
-          <p class="owlscript-job-card-line1-salary">${item.salary60}</p>
+          <p class="owlscript-job-card-line1-salary">${jobInfo.salary60}</p>
         </div>
       <div class="owlscript-job-card-line2">
-        <div class="owlscript-job-card-line2-experience">${item.workingExp}</div>
-        <div class="owlscript-job-card-line2-education">${item.education}</div>
-        ${item.jobSkillTags.length > 0
-        ? `${item.jobSkillTags
+        <div class="owlscript-job-card-line2-experience">${jobInfo.workingExp}</div>
+        <div class="owlscript-job-card-line2-education">${jobInfo.education}</div>
+        ${jobInfo.jobSkillTags.length > 0
+        ? `${jobInfo.jobSkillTags
             .map((itm) => `<div class="owlscript-job-card-line2-job-skill-tags">${itm.name}</div>`)
             .join("")}`
         : ""}
       </div>
       <div class="owlscript-job-card-line3">
-        ${item.companyLogo
-        ? `<div class="owlscript-job-card-line3-company-logo"><img src="${item.companyLogo}" alt="${item.companyName}" /></div>`
+        ${jobInfo.companyLogo
+        ? `<div class="owlscript-job-card-line3-company-logo"><img src="${jobInfo.companyLogo}" alt="${jobInfo.companyName}" /></div>`
         : ""}
         <div class="owlscript-job-card-line3-company-name">
-          <a href="${item.companyUrl}" target="_blank">${item.companyName}</a>
+          <a href="${jobInfo.companyUrl}" target="_blank">${jobInfo.companyName}</a>
         </div>
       </div>
       <div class="owlscript-job-card-line4">
         <div class="owlscript-job-card-line4-left">
           <div class="owlscript-job-card-line4-left-top">
-            <div class="owlscript-job-card-line4-left-top-company-industry">${item.industryName}</div>
-            <div class="owlscript-job-card-line4-left-top-company-type">${item.propertyName}</div>
-            <div class="owlscript-job-card-line4-left-top-company-size">${item.companySize}</div>
+            <div class="owlscript-job-card-line4-left-top-company-industry">${jobInfo.industryName}</div>
+            <div class="owlscript-job-card-line4-left-top-company-type">${jobInfo.propertyName}</div>
+            <div class="owlscript-job-card-line4-left-top-company-size">${jobInfo.companySize}</div>
           </div>
           <div class="owlscript-job-card-line4-left-bottom">
-            <div class="owlscript-job-card-line4-left-bottom-address">${item.workCity}${item.cityDistrict ? " " + item.cityDistrict : ""}${item.tradingArea ? " " + item.tradingArea : ""}${item.streetName ? " " + item.streetName : ""}</div>
+            <div class="owlscript-job-card-line4-left-bottom-address">${jobInfo.workCity}${jobInfo.cityDistrict ? " " + jobInfo.cityDistrict : ""}${jobInfo.tradingArea ? " " + jobInfo.tradingArea : ""}${jobInfo.streetName ? " " + jobInfo.streetName : ""}</div>
           </div>
         </div>
         <div class="owlscript-job-card-line4-right">
-          <div class="owlscript-job-card-btn-delivery" data-number="${item.number}" data-city="${item.workCity}">立即投递</div>
+          ${btn}
         </div>
       </div>
     </div>
-    `)
+    `;
+}
+export function formatResponsePositionsTemplate(positionResponse, pageIndex, pageSize, moreUrl, type = 'card-list') {
+    let cardsTemplate = positionResponse.data.list
+        .map((item) => jobCardTemplate(item, type))
         .join("")
         .replaceAll("\n", "");
+    let tip1 = '';
+    if (type === 'delivery-list') {
+        tip1 = '共查询到 ' + positionResponse.data.count + ' 个投递记录';
+    }
+    else {
+        tip1 = '共为您匹配到 ' + positionResponse.data.count + ' 个符合要求的职位';
+    }
+    let tip2 = '';
+    if (type === 'delivery-list') {
+        tip2 = '查看全部投递记录';
+    }
+    else {
+        tip2 = '查看全部职位';
+    }
     const beforeTemplate = `<div class="owlscript-positions-tip">
         <div class="owlscript-positions-tip-left">
-          <div class="owlscript-positions-tip-left-top">共为您匹配到 <span>${positionResponse.data.count}</span> 个符合要求的职位</div>
+          <div class="owlscript-positions-tip-left-top"><span>${tip1}</span></div>
           <div class="owlscript-positions-tip-left-bottom">第 <p class="owlscript-positions-tip-left-bottom-page-index">${pageIndex}</p> 页，共 <p class="owlscript-positions-tip-left-bottom-page-total">${Math.ceil(positionResponse.data.count / pageSize)}</p> 页</div>
         </div>
         <div class="owlscript-positions-tip-right">
           ${moreUrl
         ? '<a class="owlscript-job-card-more" href="' +
             moreUrl +
-            '" target="_blank">查看全部职位</a>'
+            '" target="_blank">' + tip2 + '</a>'
         : '<a href="javascript:void(0)" target="_blank"></a>'}
         </div>
       </div>`;

@@ -1,8 +1,9 @@
+import { Urls, } from "../types/types.js";
 import { v4 as uuidv4 } from "uuid";
 export function getResumeDetail(params) {
     return new Promise(async (resolve) => {
         const { at, rt, resumeNumber, lang = "1" } = params;
-        const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/resume?resumeNumber=${resumeNumber}&lang=${lang}&at=${at}&rt=${rt}`;
+        const apiUrl = `${Urls.zhaopin}/c/i/resume?resumeNumber=${resumeNumber}&lang=${lang}&at=${at}&rt=${rt}`;
         const response = await fetch(apiUrl, {
             method: "GET",
         });
@@ -20,7 +21,7 @@ export function getResumeDetail(params) {
 export function getResumeNumber(params) {
     return new Promise(async (resolve) => {
         const { at, rt } = params;
-        const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/user/detail?detail=true&at=${at}&rt=${rt}`;
+        const apiUrl = `${Urls.zhaopin}/c/i/user/detail?detail=true&at=${at}&rt=${rt}`;
         const response = await fetch(apiUrl, {
             method: "GET",
             headers: {
@@ -45,10 +46,35 @@ export function getResumeNumber(params) {
         }
     });
 }
+export function getJobDeliveredDetail(params) {
+    return new Promise(async (resolve) => {
+        const { at, rt, jobId, resumeId } = params;
+        const apiUrl = `${Urls.zhaopin_m}/api/feedbackv2/feedback-detail?jobId=${jobId}&resumeId=${resumeId}&at=${at}&rt=${rt}`;
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        const data = await response.json();
+        if (data.code == 200 && data.data) {
+            resolve({
+                code: 200,
+                data: data.data,
+            });
+        }
+        else {
+            resolve({
+                code: data.code,
+                data: {},
+            });
+        }
+    });
+}
 export function getJobDelivered(params) {
     return new Promise(async (resolve) => {
-        const { at, rt, status, pageIndex = 1, pageSize = 20 } = params;
-        const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/schedule/feedback?index=${pageIndex}&pageSize=${pageSize}&status=${status}&storeViewCount=false&at=${at}&rt=${rt}`;
+        const { at, rt, type, pageIndex = 1, pageSize = 20 } = params;
+        const apiUrl = `${Urls.zhaopin_m}/api/feedbackv2/feedback-list?pageIndex=${pageIndex}&pageSize=${pageSize}&type=${type}&storeViewCount=false&at=${at}&rt=${rt}`;
         const response = await fetch(apiUrl, {
             method: "GET",
             headers: {
@@ -58,12 +84,20 @@ export function getJobDelivered(params) {
         const data = await response.json();
         if (data.code == 200 &&
             data.data &&
-            data.data.code == 200 &&
-            data.data.data) {
+            data.data.list) {
+            const ps = [];
+            data.data.list.forEach((item) => {
+                ps.push(getJobDeliveredDetail({ at, rt, jobId: item.jobId, resumeId: item.resumeId }));
+            });
+            const results = await Promise.all(ps);
+            const list = data.data.list.map((item) => {
+                item.jobDetail = results.find((result) => result.code == 200 && result.data && result.data.feedbackInfo && result.data.feedbackInfo.jobId == item.jobId).data;
+                return item;
+            });
             resolve({
                 code: 200,
-                data: data.data.data,
-                total: data.data.total,
+                data: list,
+                total: data.data.count,
             });
         }
         else {
@@ -77,7 +111,7 @@ export function getJobDelivered(params) {
 }
 export function searchPositions(params) {
     return new Promise(async (resolve) => {
-        const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/search/positions`;
+        const apiUrl = `${Urls.zhaopin}/c/i/search/positions`;
         const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
@@ -86,6 +120,7 @@ export function searchPositions(params) {
             body: JSON.stringify(params),
         });
         const data = await response.json();
+        console.log("... searchPositions: ", data);
         if (data.code == 200 && data.data) {
             resolve({
                 code: 200,
@@ -103,7 +138,7 @@ export function searchPositions(params) {
 // 投递前，检查职位是否可以投递
 export function beforeDeliveryPositions(params) {
     return new Promise(async (resolve) => {
-        const apiUrl = `https://fe-api-pre.zhaopin.com/c/pc/alan/jobs/application/preparation?at=${params.at}&rt=${params.rt}`;
+        const apiUrl = `${Urls.zhaopin}/c/pc/alan/jobs/application/preparation?at=${params.at}&rt=${params.rt}`;
         const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
@@ -129,7 +164,7 @@ export function beforeDeliveryPositions(params) {
 }
 export function deliveryPositions(params) {
     return new Promise(async (resolve) => {
-        const apiUrl = `https://fe-api-pre.zhaopin.com/c/pc/alan/jobs/application?at=${params.at}&rt=${params.rt}`;
+        const apiUrl = `${Urls.zhaopin}/c/pc/alan/jobs/application?at=${params.at}&rt=${params.rt}`;
         const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
@@ -174,7 +209,7 @@ export function deliveryPositions(params) {
 }
 export function getPositionDetail(params) {
     return new Promise(async (resolve) => {
-        const apiUrl = `https://fe-api-pre.zhaopin.com/c/i/jobs/position-detailv2?number=${params.number}&cvNumber=${params.cvNumber}&at=${params.at}&rt=${params.rt}`;
+        const apiUrl = `${Urls.zhaopin}/c/i/jobs/position-detailv2?number=${params.number}&cvNumber=${params.cvNumber}&at=${params.at}&rt=${params.rt}`;
         const response = await fetch(apiUrl, {
             method: "GET",
             headers: {
@@ -204,7 +239,7 @@ export function getPositionDetailBatch(params) {
         const ps = [];
         let result = [];
         params.numbers.forEach((number) => {
-            ps.push(fetch(`https://fe-api-pre.zhaopin.com/c/i/jobs/position-detailv2?number=${number}&cvNumber=${params.cvNumber}&at=${params.at}&rt=${params.rt}`, {
+            ps.push(fetch(`${Urls.zhaopin}/c/i/jobs/position-detailv2?number=${number}&cvNumber=${params.cvNumber}&at=${params.at}&rt=${params.rt}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",

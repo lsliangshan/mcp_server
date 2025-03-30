@@ -3,6 +3,11 @@ import allIndustries from "../data/industries.json" with { type: "json" };
 // import allSubways from '../data/subways.json' with { type: "json" };
 // import allSubwayStations from '../data/subway_stations.json' with { type: "json" };
 
+export enum Urls {
+  zhaopin = "https://fe-api.zhaopin.com",
+  zhaopin_m = "https://m.zhaopin.com",
+}
+
 export enum XF_URL {
   recognizeImage = "https://api.xf-yun.com/v1/private/sf8e6aca1",
 }
@@ -34,12 +39,16 @@ export interface GetJobDeliveredOptions {
   at: string;
   rt: string;
   // 投递状态: 投递成功、被查看、有意向、邀面试、不合适
-  status: string;
-  /// 投递子状态: 全部、待确认、已接受、已拒绝
-  /// 投递状态为 邀面试 时有效
-  subStatus?: string;
+  type: string;
   pageIndex?: number;
   pageSize?: number;
+}
+
+export interface GetJobDeliveredDetailOptions {
+  at: string;
+  rt: string;
+  jobId: string;
+  resumeId: string;
 }
 
 export interface SearchPositionsOptions {
@@ -137,12 +146,20 @@ export enum JobDeliveredSubStatusReverse {
   "refused" = "已拒绝",
 }
 
+export const jobDeliveredStatus: { [key: string]: string } = {
+  "1": "已投递",
+  "10": "被查看",
+  "22": "有意向",
+  "356": "邀面试",
+  "4": "不合适",
+}
+
 export enum JobDeliveredStatus {
-  "投递成功" = "send",
-  "被查看" = "viewed",
-  "有意向" = "intersted",
-  "邀面试" = "interviewed",
-  "不合适" = "unsuitable",
+  "全部" = "0",
+  "被查看" = "10",
+  "有意向" = "22",
+  "邀面试" = "356",
+  "不合适" = "4",
 }
 
 export enum JobDeliveredSubStatus {
