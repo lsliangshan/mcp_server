@@ -23,37 +23,31 @@ export interface XF_RECOGNIZE_IMAGE_RESPONSE {
   content: string;
 }
 
-export interface GetResumeDetailOptions {
-  at: string;
-  rt: string;
-  resumeNumber: string;
-  lang?: "1";
-}
-
-export interface GetResumeNumberOptions {
+export interface LoginStatus {
   at?: string;
   rt?: string;
 }
 
-export interface GetJobDeliveredOptions {
-  at: string;
-  rt: string;
-  // 投递状态: 投递成功、被查看、有意向、邀面试、不合适
+export interface GetResumeDetailOptions extends LoginStatus {
+  resumeNumber: string;
+  lang?: "1";
+}
+
+export interface GetResumeNumberOptions extends LoginStatus {
+}
+
+export interface GetJobDeliveredOptions extends LoginStatus {
   type: string;
   pageIndex?: number;
   pageSize?: number;
 }
 
-export interface GetJobDeliveredDetailOptions {
-  at: string;
-  rt: string;
+export interface GetJobDeliveredDetailOptions extends LoginStatus {
   jobId: string;
   resumeId: string;
 }
 
-export interface SearchPositionsOptions {
-  at?: string;
-  rt?: string;
+export interface SearchPositionsOptions extends LoginStatus {
   /// 职位或公司名称
   S_SOU_FULL_INDEX?: string;
   /// 职位类别
@@ -88,9 +82,7 @@ export interface SearchPositionsOptions {
   pageSize?: number;
 }
 
-export interface DeliveryPositionsOptions {
-  at: string;
-  rt: string;
+export interface DeliveryPositionsOptions extends LoginStatus {
   /// 职位编号
   jobNumbers: string[];
   /// 城市编号
@@ -99,9 +91,7 @@ export interface DeliveryPositionsOptions {
   resumeNumber?: string;
 }
 
-export interface BeforeDeliveryPositionsOptions {
-  at: string;
-  rt: string;
+export interface BeforeDeliveryPositionsOptions extends LoginStatus {
   /// 职位编号
   jobCount: number;
   /// 是否显示附件选择
@@ -114,18 +104,14 @@ export interface BeforeDeliveryPositionsOptions {
   staffId?: string | number;
 }
 
-export interface GetPositionDetailOptions {
-  at: string;
-  rt: string;
+export interface GetPositionDetailOptions extends LoginStatus {
   /// 职位编号
   number: string;
   /// 简历编号
   cvNumber: string;
 }
 
-export interface GetPositionDetailBatchOptions {
-  at: string;
-  rt: string;
+export interface GetPositionDetailBatchOptions extends LoginStatus {
   /// 职位编号
   numbers: string[];
   /// 简历编号

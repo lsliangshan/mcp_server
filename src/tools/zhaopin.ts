@@ -12,7 +12,7 @@ import {
 } from "../types/types.js";
 import { v4 as uuidv4 } from "uuid";
 
-export function getResumeDetail(params: GetResumeDetailOptions) {
+export function getResumeDetailPC(params: GetResumeDetailOptions) {
   return new Promise(async (resolve) => {
     const { at, rt, resumeNumber, lang = "1" } = params;
 
@@ -34,7 +34,29 @@ export function getResumeDetail(params: GetResumeDetailOptions) {
   });
 }
 
-export function getResumeNumber(params: GetResumeNumberOptions): Promise<{
+export function getResumeDetail(params: GetResumeDetailOptions) {
+  return new Promise(async (resolve) => {
+    const { at, rt, resumeNumber, lang = "1" } = params;
+
+    const apiUrl = `${Urls.zhaopin_m}/api/user/detail-hide-mobile-and-email?resumeNumber=${resumeNumber}&lang=${lang}&at=${at}&rt=${rt}`;
+
+    const response = await fetch(apiUrl, {
+      method: "GET",
+    });
+
+    const data = await response.json();
+
+    if (data.code == 200 && data.data) {
+      // 请求成功
+      resolve(data.data);
+    } else {
+      // 请求失败
+      resolve({});
+    }
+  });
+}
+
+export function getResumeNumberPC(params: GetResumeNumberOptions): Promise<{
   resumeNumber: string;
   resumeId: string;
 }> {
@@ -47,7 +69,7 @@ export function getResumeNumber(params: GetResumeNumberOptions): Promise<{
         "Content-Type": "application/json",
       },
     });
-    
+
     const data = await response.json();
 
     if (
@@ -69,7 +91,39 @@ export function getResumeNumber(params: GetResumeNumberOptions): Promise<{
   });
 }
 
-export function getJobDeliveredDetail(params: GetJobDeliveredDetailOptions): Promise<{
+export function getResumeNumber(params: GetResumeNumberOptions): Promise<{
+  resumeNumber: string;
+  resumeId: string;
+}> {
+  return new Promise(async (resolve) => {
+    const { at, rt } = params;
+    const apiUrl = `${Urls.zhaopin_m}/api/user/detail-hide-mobile-and-email?at=${at}&rt=${rt}`;
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (data.resumes && data.resumes.length > 0) {
+      resolve({
+        resumeNumber: data.resumes[0].number,
+        resumeId: data.resumes[0].id,
+      });
+    } else {
+      resolve({
+        resumeNumber: "",
+        resumeId: "",
+      });
+    }
+  });
+}
+
+export function getJobDeliveredDetail(
+  params: GetJobDeliveredDetailOptions
+): Promise<{
   code: number;
   data: any;
 }> {
@@ -112,22 +166,31 @@ export function getJobDelivered(params: GetJobDeliveredOptions): Promise<{
       },
     });
     const data = await response.json();
-    
-    if (
-      data.code == 200 &&
-      data.data &&
-      data.data.list
-    ) {
+
+    if (data.code == 200 && data.data && data.data.list) {
       const ps: any[] = [];
       data.data.list.forEach((item: any) => {
-        ps.push(getJobDeliveredDetail({ at, rt, jobId: item.jobId, resumeId: item.resumeId }));
+        ps.push(
+          getJobDeliveredDetail({
+            at,
+            rt,
+            jobId: item.jobId,
+            resumeId: item.resumeId,
+          })
+        );
       });
       const results = await Promise.all(ps);
 
       const list = data.data.list.map((item: any) => {
-        item.jobDetail = results.find((result: any) => result.code == 200 && result.data && result.data.feedbackInfo && result.data.feedbackInfo.jobId == item.jobId).data;
+        item.jobDetail = results.find(
+          (result: any) =>
+            result.code == 200 &&
+            result.data &&
+            result.data.feedbackInfo &&
+            result.data.feedbackInfo.jobId == item.jobId
+        ).data;
         return item;
-      })
+      });
 
       resolve({
         code: 200,
