@@ -210,7 +210,7 @@ export function searchPositions(params) {
     });
 }
 // 投递前，检查职位是否可以投递
-export function beforeDeliveryPositions(params) {
+export function beforeDeliveryPositionsPC(params) {
     return new Promise(async (resolve) => {
         const apiUrl = `${Urls.zhaopin}/c/pc/alan/jobs/application/preparation?at=${params.at}&rt=${params.rt}`;
         const response = await fetch(apiUrl, {
@@ -236,7 +236,34 @@ export function beforeDeliveryPositions(params) {
         }
     });
 }
-export function deliveryPositions(params) {
+// 投递前，检查职位是否可以投递
+export function beforeDeliveryPositions(params) {
+    return new Promise(async (resolve) => {
+        const { at, rt } = params;
+        const apiUrl = `${Urls.zhaopin_m}/api/user/detail-hide-mobile-and-email?at=${at}&rt=${rt}`;
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        const data = await response.json();
+        if (data.resumes && data.resumes.length > 0) {
+            resolve({
+                code: 200,
+                data: data,
+            });
+        }
+        else {
+            resolve({
+                code: 1001,
+                message: "职位不可投递，请检查是否登录，且包含完整简历",
+                data: {},
+            });
+        }
+    });
+}
+export function deliveryPositionsPC(params) {
     return new Promise(async (resolve) => {
         const apiUrl = `${Urls.zhaopin}/c/pc/alan/jobs/application?at=${params.at}&rt=${params.rt}`;
         const response = await fetch(apiUrl, {
@@ -247,7 +274,7 @@ export function deliveryPositions(params) {
             body: JSON.stringify({
                 language: 3,
                 batched: false,
-                inviteCode: params.jobNumbers.length > 1,
+                // inviteCode: params.jobNumbers.length > 1,
                 ignoreIntention: 1,
                 ignoreBlackType: "",
                 deliveryChannelType: 1,
@@ -275,6 +302,50 @@ export function deliveryPositions(params) {
             resolve({
                 code: 1001,
                 message: data.message || "投递失败，请检查是否登录，且包含完整简历",
+                data: {},
+            });
+        }
+    });
+}
+export function deliveryPositions(params) {
+    return new Promise(async (resolve) => {
+        const apiUrl = `${Urls.zhaopin_m}/api/position/apply?at=${params.at}&rt=${params.rt}`;
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                language: 3,
+                batched: false,
+                inviteCode: params.positionNumbers.length > 1,
+                // ignoreIntention: 1,
+                // ignoreBlackType: "",
+                // deliveryChannelType: 1,
+                // extraApplyParams: {},
+                actionId: uuidv4(),
+                // businessSystem: "1",
+                // stSourceCode: 0,
+                // businessPlatformSub: 0,
+                // businessTagId: "",
+                // businessPlatformLabel: 0,
+                // pageCode: 4019,
+                // jobSource: "SEARCH",
+                // attachmentDefaultType: "online",
+                ...params,
+            }),
+        });
+        const data = await response.json();
+        if (data && data.statusCode == 200) {
+            resolve({
+                code: 200,
+                data: data,
+            });
+        }
+        else {
+            resolve({
+                code: 1001,
+                message: data.statusDescription || "投递失败，请检查是否登录，且包含完整简历",
                 data: {},
             });
         }
@@ -311,7 +382,7 @@ export function getPositionDetailBatch(params) {
         const ps = [];
         let result = [];
         params.numbers.forEach((number) => {
-            ps.push(fetch(`${Urls.zhaopin}/c/i/jobs/position-detailv2?number=${number}&cvNumber=${params.cvNumber}&at=${params.at}&rt=${params.rt}`, {
+            ps.push(fetch(`${Urls.zhaopin_m}/api/position/detail?number=${number}&cvNumber=${params.cvNumber}&at=${params.at}&rt=${params.rt}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",

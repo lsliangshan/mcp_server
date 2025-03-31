@@ -84,9 +84,9 @@ export interface SearchPositionsOptions extends LoginStatus {
 
 export interface DeliveryPositionsOptions extends LoginStatus {
   /// 职位编号
-  jobNumbers: string[];
+  positionNumbers: string;
   /// 城市编号
-  cityIds?: string[];
+  cityIds?: string;
   /// 简历编号
   resumeNumber?: string;
 }

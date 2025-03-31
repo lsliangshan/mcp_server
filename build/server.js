@@ -701,16 +701,6 @@ server.addTool({
                 ],
             };
         }
-        if (!responseInfo.data.loggedIn) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `投递职位前，请先登录。每次都要返回登录的地址（<a href="https://passport.zhaopin.com/login?bkUrl=%2F%2Fi.zhaopin.com%2Fblank%3Fhttps%3A%2F%2Fwww.zhaopin.com%3FvalidateCampus%3D" target="_blank" class="primary-color">登录</a>）`,
-                    },
-                ],
-            };
-        }
         const resumes = responseInfo.data.resumes || [];
         if (resumes.length < 1) {
             return {
@@ -760,16 +750,22 @@ server.addTool({
         let unvalid = [];
         positionDetail.data.forEach((item) => {
             if (item.code == 200) {
-                if (item.data.detailedPosition.hasAppliedPosition) {
+                if (item.data.positionDetail.hasAppliedPosition) {
                     delivered.push({
-                        number: item.data.detailedPosition.number,
-                        cityId: item.data.detailedPosition.positionCityId,
+                        number: item.data.positionDetail.number,
+                        cityId: item.data.positionDetail.positionCityId,
+                        positionName: item.data.positionDetail.positionName,
+                        companyName: item.data.positionDetail.companyName,
+                        salary60: item.data.positionDetail.salary60,
                     });
                 }
                 else {
                     unDelivered.push({
-                        number: item.data.detailedPosition.number,
-                        cityId: item.data.detailedPosition.positionCityId,
+                        number: item.data.positionDetail.number,
+                        cityId: item.data.positionDetail.positionCityId,
+                        positionName: item.data.positionDetail.positionName,
+                        companyName: item.data.positionDetail.companyName,
+                        salary60: item.data.positionDetail.salary60,
                     });
                 }
             }
@@ -779,22 +775,29 @@ server.addTool({
                 });
             }
         });
-        const useJobNumberTemplate = `\n返回时，使用 职位编号的 HTML 模板替换 职位编号，HTML 模板是 <a href="https://jobs.zhaopin.com/职位编号.htm" target="_blank" class="primary-color">职位编号</a>`;
+        const useJobNumberTemplate = `\n返回时，使用 职位编号的 HTML 模板替换 职位编号，HTML 模板是 <a href="https://jobs.zhaopin.com/职位编号.htm" target="_blank" class="primary-color">公司名称-职位名称-职位薪资（职位编号）</a>`;
         const deliveredTemplate = delivered.length > 0
-            ? `\n重复投递的职位: ${delivered.map((item) => item.number).join(",")}`
+            ? `\n${delivered.length} 个重复投递的职位: ${delivered
+                .map((item) => `${item.companyName}-${item.positionName}-${item.salary60}（${item.number}）`)
+                .join(",")}`
             : "";
         const unvalidTemplate = unvalid.length > 0
-            ? `\n无效的职位: ${unvalid.map((item) => item.number).join(",")}`
+            ? `\n${unvalid.length} 个无效的职位: ${unvalid
+                .map((item) => item.number)
+                .join(",")}`
             : "";
         if (unDelivered.length < 1) {
             return {
                 content: [
                     {
                         type: "text",
-                        text: `没有可投递的职位。
+                        text: `JSON: ${JSON.stringify({
+                            code: 200,
+                            message: `没有可投递的职位。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
             ${deliveredTemplate}
             ${unvalidTemplate}
             ${useJobNumberTemplate}`,
+                        })}`,
                     },
                 ],
             };
@@ -802,28 +805,11 @@ server.addTool({
         const deliveryInfo = await deliveryPositions({
             at: args.at,
             rt: args.rt,
-            jobNumbers: unDelivered.map((item) => item.number),
+            positionNumbers: unDelivered.map((item) => item.number).join(";"),
             resumeNumber,
-            cityIds: unDelivered.map((item) => item.cityId),
+            cityIds: unDelivered.map((item) => item.cityId).join(";"),
         });
         if (deliveryInfo.code == 200) {
-            // return {
-            //   content: [
-            //     {
-            //       type: "text",
-            //       text: `JSON: ${JSON.stringify({
-            //         code: 200,
-            //         message: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
-            //       \n成功投递的职位：${args.jobNumbers.join(",")}
-            //       \n${templates.jobNumber}`,
-            //         data: {
-            //           action: "delivery-response",
-            //           jobNumbers: args.jobNumbers,
-            //         },
-            //       })}`,
-            //     },
-            //   ],
-            // };
             return {
                 content: [
                     {
@@ -831,8 +817,8 @@ server.addTool({
                         text: `JSON: ${JSON.stringify({
                             code: 200,
                             message: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
-            \n成功投递的职位：${unDelivered
-                                .map((item) => item.number)
+            \n${unDelivered.length} 个成功投递的职位：${unDelivered
+                                .map((item) => `${item.companyName}-${item.positionName}-${item.salary60}（${item.number}）`)
                                 .join(",")}
             ${deliveredTemplate}
             ${unvalidTemplate}
@@ -845,23 +831,6 @@ server.addTool({
                     },
                 ],
             };
-            // return {
-            //   content: [
-            //     {
-            //       type: "text",
-            //       text: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
-            //       \n成功投递的职位：${unDelivered
-            //         .map((item) => item.number)
-            //         .join(",")}
-            //       ${deliveredTemplate}
-            //       ${unvalidTemplate}
-            //       ${useJobNumberTemplate}`,
-            //       data: {
-            //         jobNumbers: unDelivered.map((item) => item.number),
-            //       },
-            //     },
-            //   ],
-            // };
         }
         return {
             content: [
