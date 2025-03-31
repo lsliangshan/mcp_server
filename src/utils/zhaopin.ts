@@ -155,7 +155,6 @@ export function formatRequestParams(args: any, resumeNumber: string) {
   }
 
   if (args.salaryType) {
-    console.log(args.salaryType);
     params[JobSearchConditionMap.salaryType] = args.salaryType;
   }
   if (args.educationType) {
@@ -354,7 +353,6 @@ export function formatMorePositionsUrlWithPurpose(
 }
 
 export function translateToPositions(delivered: any, total: number) {
-  console.log("... translateToPositions delivered: ", delivered[0].jobDetail.feedbackInfo);
   return {
     data: {
       list: delivered.map((item: any) => ({
@@ -366,18 +364,20 @@ export function translateToPositions(delivered: any, total: number) {
         jobSkillTags: [],
         companyLogo: item.companyLogUrl,
         companyName: item.companyName,
-        companyUrl: '',
-        industryName: '',
-        propertyName: '',
-        companySize: '',
+        msgType: item.msgType,
+        msgTime: item.jobDetail.feedbackInfo.msgTime,
+        companyUrl: "",
+        industryName: "",
+        propertyName: "",
+        companySize: "",
         workCity: item.city,
-        cityDistrict: '',
-        tradingArea: '',
-        streetName: '',
+        cityDistrict: "",
+        tradingArea: "",
+        streetName: "",
         number: item.jobDetail.feedbackInfo.jobNumber,
       })),
       count: total,
-    }
+    },
   };
   // return {
   //   positionUrl: `https://jobs.zhaopin.com/${delivered.jobDetail.feedbackInfo.jobNumber}.htm`,
@@ -399,12 +399,17 @@ export function translateToPositions(delivered: any, total: number) {
   //   number: delivered.jobDetail.feedbackInfo.jobNumber,
   // };
 }
-export function jobCardTemplate(jobInfo: any, type: 'card-list' | 'delivery-list' = 'card-list') {
-  let btn = ''
-  if (type === 'delivery-list') {
-    btn = `<div class="owlscript-job-card-btn-status">${jobDeliveredStatus[jobInfo.msgType.toString()]}</div>`
+export function jobCardTemplate(
+  jobInfo: any,
+  type: "card-list" | "delivery-list" = "card-list"
+) {
+  let btn = "";
+  if (type === "delivery-list") {
+    btn = `<div class="owlscript-job-card-btn-status">${
+      jobDeliveredStatus[jobInfo.msgType.toString()]
+    }</div>`;
   } else {
-    btn = `<div class="owlscript-job-card-btn-delivery" data-number="${jobInfo.number}" data-city="${jobInfo.workCity}">查看投递详情</div>`
+    btn = `<div class="owlscript-job-card-btn-delivery" data-number="${jobInfo.number}" data-city="${jobInfo.workCity}">查看投递详情</div>`;
   }
   return `
     <div class="owlscript-job-card">
@@ -416,9 +421,11 @@ export function jobCardTemplate(jobInfo: any, type: 'card-list' | 'delivery-list
         </div>
       <div class="owlscript-job-card-line2">
         <div class="owlscript-job-card-line2-experience">${
-          jobInfo.workingExp
+          jobInfo.workingExp == "不限" ? "经验不限" : jobInfo.workingExp
         }</div>
-        <div class="owlscript-job-card-line2-education">${jobInfo.education}</div>
+        <div class="owlscript-job-card-line2-education">${
+          jobInfo.education == "不限" ? "学历不限" : jobInfo.education
+        }</div>
         ${
           jobInfo.jobSkillTags.length > 0
             ? `${jobInfo.jobSkillTags
@@ -437,7 +444,9 @@ export function jobCardTemplate(jobInfo: any, type: 'card-list' | 'delivery-list
             : ""
         }
         <div class="owlscript-job-card-line3-company-name">
-          <a href="${jobInfo.companyUrl}" target="_blank">${jobInfo.companyName}</a>
+          <a href="${jobInfo.companyUrl}" target="_blank">${
+    jobInfo.companyName
+  }</a>
         </div>
       </div>
       <div class="owlscript-job-card-line4">
@@ -457,8 +466,13 @@ export function jobCardTemplate(jobInfo: any, type: 'card-list' | 'delivery-list
             <div class="owlscript-job-card-line4-left-bottom-address">${
               jobInfo.workCity
             }${jobInfo.cityDistrict ? " " + jobInfo.cityDistrict : ""}${
-        jobInfo.tradingArea ? " " + jobInfo.tradingArea : ""
-      }${jobInfo.streetName ? " " + jobInfo.streetName : ""}</div>
+    jobInfo.tradingArea ? " " + jobInfo.tradingArea : ""
+  }${jobInfo.streetName ? " " + jobInfo.streetName : ""}</div>
+              ${
+                type === "delivery-list"
+                  ? `<div class="owlscript-job-card-line4-left-bottom-time">${jobInfo.msgTime}</div>`
+                  : ""
+              }
           </div>
         </div>
         <div class="owlscript-job-card-line4-right">
@@ -474,29 +488,34 @@ export function formatResponsePositionsTemplate(
   pageIndex: number,
   pageSize: number,
   moreUrl?: string,
-  type: 'card-list' | 'delivery-list' = 'card-list'
+  type: "card-list" | "delivery-list" = "card-list"
 ) {
   let cardsTemplate = positionResponse.data.list
-    .map(
-      (item: any) => jobCardTemplate(item, type)
-    )
+    .map((item: any) => jobCardTemplate(item, type))
     .join("")
     .replaceAll("\n", "");
-  let tip1 = ''
-  if (type === 'delivery-list') {
-    tip1 = '共查询到 ' + positionResponse.data.count + ' 个投递记录'
+  let tip1 = "";
+  if (type === "delivery-list") {
+    tip1 =
+      "共查询到 <span class='primary-color'>" +
+      positionResponse.data.count +
+      "</span> 个投递记录";
   } else {
-    tip1 = '共为您匹配到 ' + positionResponse.data.count + ' 个符合要求的职位'
+    tip1 =
+      "共为您匹配到 <span class='primary-color'>" +
+      positionResponse.data.count +
+      "</span> 个符合要求的职位";
   }
-  let tip2 = ''
-  if (type === 'delivery-list') {
-    tip2 = '查看全部投递记录'
+  let tip2 = "";
+  if (type === "delivery-list") {
+    tip2 = "查看全部投递记录";
   } else {
-    tip2 = '查看全部职位'
+    tip2 = "查看全部职位";
   }
+
   const beforeTemplate = `<div class="owlscript-positions-tip">
         <div class="owlscript-positions-tip-left">
-          <div class="owlscript-positions-tip-left-top"><span>${tip1}</span></div>
+          <div class="owlscript-positions-tip-left-top">${tip1}</div>
           <div class="owlscript-positions-tip-left-bottom">第 <p class="owlscript-positions-tip-left-bottom-page-index">${pageIndex}</p> 页，共 <p class="owlscript-positions-tip-left-bottom-page-total">${Math.ceil(
     positionResponse.data.count / pageSize
   )}</p> 页</div>
@@ -506,7 +525,9 @@ export function formatResponsePositionsTemplate(
             moreUrl
               ? '<a class="owlscript-job-card-more" href="' +
                 moreUrl +
-                '" target="_blank">' + tip2 + '</a>'
+                '" target="_blank">' +
+                tip2 +
+                "</a>"
               : '<a href="javascript:void(0)" target="_blank"></a>'
           }
         </div>
