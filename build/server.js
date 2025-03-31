@@ -77,12 +77,20 @@ server.addTool({
         rt: z.string().optional(),
     }),
     execute: async (args) => {
+        if (!args.at || args.at == "undefined") {
+            delete args.at;
+        }
+        if (!args.rt || args.rt == "undefined") {
+            delete args.rt;
+        }
+        const templates = getReponseTemplate();
         if (!args.at || !args.rt) {
             return {
                 content: [
                     {
                         type: "text",
-                        text: `at/rt不能为空，提示用户检查是否登录`,
+                        text: `登录后才能投递职位。
+            \n${templates.login}`,
                     },
                 ],
             };
@@ -112,30 +120,39 @@ server.addTool({
             rt: args.rt,
             lang: "1",
         });
-        if (resumeDetail.UnifiedPurpose && resumeDetail.UnifiedPurpose.length > 0) {
+        if (resumeDetail.unifiedPurposes &&
+            resumeDetail.unifiedPurposes.length > 0) {
             return {
                 content: [
                     {
                         type: "text",
-                        text: `姓名: ${resumeDetail.Profile[0].name}
-            \n性别: ${resumeDetail.Profile[0].genderTranslation}
-            \n当前身份: ${resumeDetail.Profile[0].currentIdentityTranslation}
-            \n出生日期: ${resumeDetail.Profile[0].birthyear}年${resumeDetail.Profile[0].birthmonth}月
-            \n户口所在地: ${resumeDetail.Profile[0].hukouProvinceIdTranslation}-${resumeDetail.Profile[0].hukouCityIdTranslation}
-            \n现居住地: ${resumeDetail.Profile[0].currentProvinceTranslation}-${resumeDetail.Profile[0].currentCityTranslation}-${resumeDetail.Profile[0].currentCityDistrictIdTranslation}
-            \n政治面貌: ${resumeDetail.Profile[0].politicalAffiliationTranslation}
-            \n最高学历: ${resumeDetail.Profile[0].eduHighestLevelTranslationCn}
-            \n手机号码: ${resumeDetail.Profile[0].mobileBinding}
-            \n电子邮箱: ${resumeDetail.Profile[0].email || "未填写"}
-            \n求职状态: ${resumeDetail.Profile[0].currentStatusTranslationCN || "未填写"}
-            \n求职意向: ${resumeDetail.UnifiedPurpose.map((item) => `期望行业: ${item.pnewPreferredIndustryTranslation} - 期望城市: ${item.preferredLocationTranslation} - 期望薪资: ${item.preferredSalaryMin}-${item.preferredSalaryMax} 元/月 - 期望工作性质: ${item.preferredJobNatureTranslation}`).join("\n")}
-            \n教育经历: ${resumeDetail.EducationExperience.map((item) => `学校名称: ${item.eduSchoolName} - 学历: ${item.eduBackgroundTranslation} - 专业: ${item.eduMajorV} - 在校时间: ${dateFormat(item.eduStartDate)}至${item.eduEndDate == 0 ? "至今" : dateFormat(item.eduEndDate)}`).join("\n")}
-            \n工作/实习经历: ${resumeDetail.WorkExperience.map((item) => `公司名称: ${item.companyName} - 所属行业: ${item.wnewIndustryTranslation} - 职位名称: ${item.title} - 拥有技能: ${item.skillTagList
+                        text: `姓名: ${resumeDetail.profile[0].name}
+            \n性别: ${resumeDetail.profile[0].genderTranslation}
+            \n当前身份: ${resumeDetail.profile[0].currentIdentityTranslation}
+            \n出生日期: ${resumeDetail.profile[0].birthyear}年${resumeDetail.profile[0].birthmonth}月
+            \n户口所在地: ${resumeDetail.profile[0].hukouProvinceIdTranslation}-${resumeDetail.profile[0].hukouCityIdTranslation}
+            \n现居住地: ${resumeDetail.profile[0].currentProvinceTranslation}-${resumeDetail.profile[0].currentCityTranslation}-${resumeDetail.profile[0].currentCityDistrictIdTranslation}
+            \n政治面貌: ${resumeDetail.profile[0].politicalAffiliationTranslation}
+            \n最高学历: ${resumeDetail.profile[0].eduHighestLevelTranslationCn}
+            \n手机号码: ${resumeDetail.profile[0].mobileBinding}
+            \n电子邮箱: ${resumeDetail.profile[0].email || "未填写"}
+            \n求职状态: ${resumeDetail.profile[0].currentStatusTranslationCN || "未填写"}
+            \n求职意向: ${resumeDetail.unifiedPurposes
+                            .map((item) => `期望行业: ${item.pnewPreferredIndustryTranslation} - 期望城市: ${item.preferredLocationTranslation} - 期望薪资: ${item.preferredSalaryMin}-${item.preferredSalaryMax} 元/月 - 期望工作性质: ${item.preferredJobNatureTranslation}`)
+                            .join("\n")}
+            \n教育经历: ${resumeDetail.educationExperiences
+                            .map((item) => `学校名称: ${item.eduSchoolName} - 学历: ${item.eduBackgroundTranslation} - 专业: ${item.eduMajorV} - 在校时间: ${dateFormat(item.eduStartDate)}至${item.eduEndDate == 0 ? "至今" : dateFormat(item.eduEndDate)}`)
+                            .join("\n")}
+            \n工作/实习经历: ${resumeDetail.workExperience
+                            .map((item) => `公司名称: ${item.companyName} - 所属行业: ${item.wnewIndustryTranslation} - 职位名称: ${item.title} - 拥有技能: ${item.skillTagList
                             .map((skill) => skill.name)
-                            .join(",")} - 当前月薪: ${item.realSalary} 元/月 - 在职时间: ${dateFormat(item.startDate)} - 离职时间: ${item.endDate == 0 ? "至今" : dateFormat(item.endDate)} - 工作描述或内容: ${item.workDesc}`).join("\n")}
-            \n项目经历: ${resumeDetail.ProjectExperience.map((item) => `项目名称: ${item.proExpProjectName} - 项目开始时间: ${dateFormat(item.proExpStartDate)} - 项目结束时间 ${item.proExpEndDate == 0
+                            .join(",")} - 当前月薪: ${item.realSalary} 元/月 - 在职时间: ${dateFormat(item.startDate)} - 离职时间: ${item.endDate == 0 ? "至今" : dateFormat(item.endDate)} - 工作描述或内容: ${item.workDesc}`)
+                            .join("\n")}
+            \n项目经历: ${resumeDetail.projectExperiences
+                            .map((item) => `项目名称: ${item.proExpProjectName} - 项目开始时间: ${dateFormat(item.proExpStartDate)} - 项目结束时间 ${item.proExpEndDate == 0
                             ? "至今"
-                            : dateFormat(item.proExpEndDate)} - 项目描述: ${item.proExpProjectDesc}`).join("\n")}
+                            : dateFormat(item.proExpEndDate)} - 项目描述: ${item.proExpProjectDesc}`)
+                            .join("\n")}
             \n如果用户只想获取姓名，请只返回用户的姓名，不要返回其他内容。
             \n如果用户只想获取教育经历中的某一项，如教育经历中的学校名称，则只返回教育经历的学校名称，不要返回其他内容，并输出为表格形式。
             \n如果用户询问“是否在XX公司工作过”，则从所有工作/实习的公司名称中，查找是否包含XX公司，如果不包含，则返回“否”；如果包含，则只返回在XX公司的工作/实习经历，不返回其他公司的工作/实习经历，并输出为表格形式。
@@ -147,38 +164,6 @@ server.addTool({
                     },
                 ],
             };
-            // return {
-            //   // \n求职意向: - 期望职位: ${resumeDetail.UnifiedPurpose.map((item: any) => item.title).join(', ')} - 期望行业: ${resumeDetail.UnifiedPurpose[0].pnewPreferredIndustryTranslation} - 期望城市: ${resumeDetail.UnifiedPurpose.map((item: any) => item.preferredLocationTranslation).join(', ')} - 期望薪资: ${resumeDetail.UnifiedPurpose[0].preferredSalaryMin} 至 ${resumeDetail.UnifiedPurpose[0].preferredSalaryTranslation} - 期望工作性质: ${resumeDetail.UnifiedPurpose[0].preferredJobNatureTranslation}
-            //   content: [
-            //     {
-            //       type: "text",
-            //       text: `姓名: ${resumeDetail.Profile[0].name}
-            //       \n性别: ${resumeDetail.Profile[0].genderTranslation}
-            //       \n当前身份: ${resumeDetail.Profile[0].currentIdentityTranslation}
-            //       \n出生日期: ${resumeDetail.Profile[0].birthyear}年${resumeDetail.Profile[0].birthmonth}月
-            //       \n户口所在地: ${resumeDetail.Profile[0].hukouProvinceIdTranslation}-${resumeDetail.Profile[0].hukouCityIdTranslation}
-            //       \n现居住地: ${resumeDetail.Profile[0].currentProvinceTranslation}-${resumeDetail.Profile[0].currentCityTranslation}-${resumeDetail.Profile[0].currentCityDistrictIdTranslation}
-            //       \n政治面貌: ${resumeDetail.Profile[0].politicalAffiliationTranslation}
-            //       \n最高学历: ${resumeDetail.Profile[0].eduHighestLevelTranslationCn}
-            //       \n手机号码: ${resumeDetail.Profile[0].mobileBinding}
-            //       \n电子邮箱: ${resumeDetail.Profile[0].email || '未填写'}
-            //       \n求职状态: ${resumeDetail.Profile[0].currentStatusTranslationCN || '未填写'}
-            //       \n求职意向: ${resumeDetail.UnifiedPurpose.map((item: any) => `期望行业: ${item.pnewPreferredIndustryTranslation} - 期望城市: ${item.preferredLocationTranslation} - 期望薪资: ${item.preferredSalaryMin}-${item.preferredSalaryMax} 元/月 - 期望工作性质: ${item.preferredJobNatureTranslation}`).join('\n')}
-            //       \n教育经历: ${resumeDetail.EducationExperience.map((item: any) => `学校名称: ${item.eduSchoolName} - 学历: ${item.eduBackgroundTranslation} - 专业: ${item.eduMajorV} - 在校时间: ${item.eduStartDateFormat.split(' ')[0]}至${item.eduEndDateFormat.split(' ')[0]}`).join('\n')}
-            //       \n工作/实习经历: ${resumeDetail.WorkExperience.map((item: any) => `公司名称: ${item.companyName} - 所属行业: ${item.wnewIndustryTranslation} - 职位名称: ${item.title} - 拥有技能: ${item.skillTagList.map((skill: any) => skill.name).join(',')} - 当前月薪: ${item.realSalary} 元/月 - 在职时间: ${item.startDateFormat.split(' ')[0]} - 离职时间: ${item.endDateFormat.split(' ')[0]} - 工作描述或内容: ${item.workDesc}`).join('\n')}
-            //       \n项目经历: ${resumeDetail.ProjectExperience.map((item: any) => `项目名称: ${item.proExpProjectName} - 项目开始时间: ${item.proExpStartDateFormat.split(' ')[0]} - 项目结束时间 ${item.proExpEndDateFormat.split(' ')[0]} - 项目描述: ${item.proExpProjectDesc}`).join('\n')}
-            //       \n如果用户只想获取姓名，请只返回用户的姓名，不要返回其他内容。
-            //       \n如果用户只想获取求职意向中的期望行业，则只返回求职意向中的期望行业，不要返回其他内容，并输出为表格形式。
-            //       \n如果用户只想获取教育经历中的某一项，如教育经历中的学校名称，则只返回教育经历的学校名称，不要返回其他内容，并输出为表格形式。
-            //       \n如果用户只想获取工作/实习经历的公司名称，则只返回工作/实习经历中的公司名称，不要返回其他内容，并输出为表格形式。
-            //       \n如果用户询问“是否在XX公司工作过”，则从所有工作/实习的公司名称中，查找是否包含XX公司，如果包含，则只返回在XX公司的工作/实习经历，不返回其他公司的工作/实习经历，并输出为表格形式；否则返回“否”，不要返回其他内容。
-            //       \n如果用户只想获取项目经历的项目名称，则只返回项目经历中的项目名称，不要返回其他内容，并输出为表格形式。
-            //       \n如果用户只想获取某一份教育经历，或工作/实习经历，或项目经历，或求职意向，则只返回该份教育经历，或工作/实习经历，或项目经历，或求职意向，不要返回其他内容，并输出为表格形式。
-            //       \n如果用户想获取所有教育经历的学校，或工作/实习经历的公司，或项目经历的项目，或求职意向的期望行业，则返回所有教育经历的学校，或工作/实习经历的公司，或项目经历的项目，或求职意向的期望行业，并输出为表格形式。
-            //       \n表格使用 HTML 标签，直接使用 HTML 标签，不要封装成 Markdown 格式`,
-            //     },
-            //   ],
-            // };
         }
         else {
             return {

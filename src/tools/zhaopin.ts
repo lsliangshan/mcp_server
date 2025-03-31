@@ -38,14 +38,13 @@ export function getResumeDetail(params: GetResumeDetailOptions) {
   return new Promise(async (resolve) => {
     const { at, rt, resumeNumber, lang = "1" } = params;
 
-    const apiUrl = `${Urls.zhaopin_m}/api/user/detail-hide-mobile-and-email?resumeNumber=${resumeNumber}&lang=${lang}&at=${at}&rt=${rt}`;
+    const apiUrl = `${Urls.zhaopin_m}/api/resume/preview?resumeNumber=${resumeNumber}&lang=${lang}&at=${at}&rt=${rt}`;
 
     const response = await fetch(apiUrl, {
       method: "GET",
     });
 
     const data = await response.json();
-
     if (data.code == 200 && data.data) {
       // 请求成功
       resolve(data.data);

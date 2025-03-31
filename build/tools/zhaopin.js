@@ -21,7 +21,7 @@ export function getResumeDetailPC(params) {
 export function getResumeDetail(params) {
     return new Promise(async (resolve) => {
         const { at, rt, resumeNumber, lang = "1" } = params;
-        const apiUrl = `${Urls.zhaopin_m}/api/user/detail-hide-mobile-and-email?resumeNumber=${resumeNumber}&lang=${lang}&at=${at}&rt=${rt}`;
+        const apiUrl = `${Urls.zhaopin_m}/api/resume/preview?resumeNumber=${resumeNumber}&lang=${lang}&at=${at}&rt=${rt}`;
         const response = await fetch(apiUrl, {
             method: "GET",
         });
