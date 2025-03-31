@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
   BeforeDeliveryPositionsOptions,
   DeliveryPositionsOptions,
@@ -206,7 +207,7 @@ export function getJobDelivered(params: GetJobDeliveredOptions): Promise<{
   });
 }
 
-export function searchPositions(params: SearchPositionsOptions): Promise<{
+export function searchPositionsPC(params: SearchPositionsOptions): Promise<{
   code: number;
   data: any;
 }> {
@@ -221,7 +222,37 @@ export function searchPositions(params: SearchPositionsOptions): Promise<{
       body: JSON.stringify(params),
     });
     const data = await response.json();
-    console.log("... searchPositions: ", data);
+
+    if (data.code == 200 && data.data) {
+      resolve({
+        code: 200,
+        data: data.data,
+      });
+    } else {
+      resolve({
+        code: data.code,
+        data: [],
+      });
+    }
+  });
+}
+
+export function searchPositions(params: SearchPositionsOptions): Promise<{
+  code: number;
+  data: any;
+}> {
+  return new Promise(async (resolve) => {
+    const apiUrl = `${Urls.zhaopin_m}/api/sou/search-position`;
+
+    const response = await axios.get(apiUrl, {
+      params: {
+        ...params,
+        platform: 7,
+        _v: Math.random(),
+      },
+    });
+    const data = response.data;
+
     if (data.code == 200 && data.data) {
       resolve({
         code: 200,
@@ -303,7 +334,7 @@ export function deliveryPositions(params: DeliveryPositionsOptions): Promise<{
       }),
     });
     const data = await response.json();
-    console.log("... deliveryPositions: ", data);
+
     if (data && !data.error) {
       resolve({
         code: 200,
@@ -333,7 +364,7 @@ export function getPositionDetail(params: GetPositionDetailOptions): Promise<{
       },
     });
     const data = await response.json();
-    console.log("... deliveryPositions: ", data);
+
     if (data && data.code == 200 && data.data) {
       resolve({
         code: 200,

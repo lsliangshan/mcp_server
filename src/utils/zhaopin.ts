@@ -65,7 +65,7 @@ export function getWorkExpCodeByYear(year: number) {
 export function formatRequestParams(args: any, resumeNumber: string) {
   // 多返回一个  cityCode 和 cityAreaCode，用于后续拼装 全部职位链接，不用于接口请求
   let params: any = {
-    eventScenario: "pcSearchedSouSearch",
+    // eventScenario: "pcSearchedSouSearch",
     at: args.at,
     rt: args.rt,
     cvNumber: resumeNumber || "",
@@ -409,7 +409,7 @@ export function jobCardTemplate(
       jobDeliveredStatus[jobInfo.msgType.toString()]
     }</div>`;
   } else {
-    btn = `<div class="owlscript-job-card-btn-delivery" data-number="${jobInfo.number}" data-city="${jobInfo.workCity}">查看投递详情</div>`;
+    btn = `<div class="owlscript-job-card-btn-delivery" data-number="${jobInfo.number}" data-city="${jobInfo.workCity}">立即投递</div>`;
   }
   return `
     <div class="owlscript-job-card">
@@ -483,13 +483,21 @@ export function jobCardTemplate(
     `;
 }
 
-export function formatResponsePositionsTemplate(
-  positionResponse: any,
-  pageIndex: number,
-  pageSize: number,
-  moreUrl?: string,
-  type: "card-list" | "delivery-list" = "card-list"
-) {
+export function formatResponsePositionsTemplate(params: {
+  positionResponse: any;
+  pageIndex: number;
+  pageSize: number;
+  moreUrl?: string;
+  type: "card-list" | "delivery-list";
+}) {
+  const {
+    positionResponse,
+    pageIndex,
+    pageSize,
+    moreUrl,
+    type = "card-list",
+  } = params;
+
   let cardsTemplate = positionResponse.data.list
     .map((item: any) => jobCardTemplate(item, type))
     .join("")

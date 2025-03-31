@@ -225,7 +225,13 @@ server.addTool({
                                     data: {
                                         totalCount: resumeDetail.total,
                                     },
-                                    message: `${formatResponsePositionsTemplate(translateToPositions(resumeDetail.data, resumeDetail.total), args.pageIndex || 1, args.pageSize || 20, "https://i.zhaopin.com/schedule", "delivery-list")}`,
+                                    message: `${formatResponsePositionsTemplate({
+                                        positionResponse: translateToPositions(resumeDetail.data, resumeDetail.total),
+                                        pageIndex: args.pageIndex || 1,
+                                        pageSize: args.pageSize || 20,
+                                        moreUrl: "https://i.zhaopin.com/schedule",
+                                        type: "delivery-list",
+                                    })}`,
                                 })}`}`,
                     },
                 ],
@@ -345,7 +351,6 @@ server.addTool({
                 rt: args.rt,
             }
             : {});
-        console.log("args", args);
         const params = formatRequestParams(args, resumeNumber);
         let cityAreaCode = "";
         let cityCode = "";
@@ -358,7 +363,6 @@ server.addTool({
             delete params.cityCode;
         }
         params.S_SOU_SALARY = formatSalary(params.S_SOU_SALARY);
-        console.log("params", params);
         const positionResponse = await searchPositions({
             ...params,
         });
@@ -380,7 +384,13 @@ server.addTool({
                                     totalCount: positionResponse.data.count,
                                     isEndPage: positionResponse.data.isEndPage == 1,
                                 },
-                                message: `${recommendLoginTemplate}\n${formatResponsePositionsTemplate(positionResponse, args.pageIndex, args.pageSize, moreUrl)}`,
+                                message: `${recommendLoginTemplate}\n${formatResponsePositionsTemplate({
+                                    positionResponse,
+                                    pageIndex: args.pageIndex,
+                                    pageSize: args.pageSize,
+                                    moreUrl,
+                                    type: "card-list",
+                                })}`,
                             })}`}`,
                     },
                 ],
@@ -494,7 +504,6 @@ server.addTool({
                 ],
             };
         }
-        console.log("... args: ", args);
         const { resumeNumber } = await getResumeNumber({
             at: args.at,
             rt: args.rt,
@@ -515,44 +524,52 @@ server.addTool({
             S_SOU_WORK_EXPERIENCE: "",
             S_SOU_POSITION_TYPE: "",
         };
-        if (resumeInfo.UnifiedPurpose && resumeInfo.UnifiedPurpose.length > 0) {
+        if (resumeInfo.unifiedPurposes && resumeInfo.unifiedPurposes.length > 0) {
             // 使用用户的全部求职意向
-            let jt = resumeInfo.UnifiedPurpose.map((item) => item.newPreferredJobType);
+            let jt = resumeInfo.unifiedPurposes.map((item) => item.newPreferredJobType);
             defaultParams.S_SOU_JD_JOB_LEVEL3 = Array.from(new Set(jt)).join(";");
-            let ind = resumeInfo.UnifiedPurpose.map((item) => item.newPreferredIndustry).join(",");
+            let ind = resumeInfo.unifiedPurposes
+                .map((item) => item.newPreferredIndustry)
+                .join(",");
             defaultParams.S_SOU_JD_INDUSTRY_LEVEL = Array.from(new Set(ind.split(","))).join(";");
-            defaultParams.S_SOU_WORK_CITY = resumeInfo.UnifiedPurpose.map((item) => item.preferredCityDistrict.split(":").pop()).join(";");
-            let s = resumeInfo.UnifiedPurpose.map((item) => item.preferredSalary);
+            defaultParams.S_SOU_WORK_CITY = resumeInfo.unifiedPurposes
+                .map((item) => item.preferredCityDistrict.split(":").pop())
+                .join(";");
+            let s = resumeInfo.unifiedPurposes.map((item) => item.preferredSalary);
             defaultParams.S_SOU_SALARY = Array.from(new Set(s)).join(";");
-            let js = resumeInfo.UnifiedPurpose.map((item) => item.preferredJobNature).join(",");
+            let js = resumeInfo.unifiedPurposes
+                .map((item) => item.preferredJobNature)
+                .join(",");
             defaultParams.S_SOU_POSITION_TYPE = Array.from(new Set(js.split(","))).join(";");
             // // 此处只取 第一份求职意向
             // defaultParams.S_SOU_JD_JOB_LEVEL3 =
-            //   resumeInfo.UnifiedPurpose[0].newPreferredJobType;
-            // if (resumeInfo.UnifiedPurpose[0].newPreferredIndustry) {
+            //   resumeInfo.unifiedPurposes[0].newPreferredJobType;
+            // if (resumeInfo.unifiedPurposes[0].newPreferredIndustry) {
             //   defaultParams.S_SOU_JD_INDUSTRY_LEVEL =
-            //     resumeInfo.UnifiedPurpose[0].newPreferredIndustry;
+            //     resumeInfo.unifiedPurposes[0].newPreferredIndustry;
             // } else {
             //   delete defaultParams.S_SOU_JD_INDUSTRY_LEVEL;
             // }
-            // args.city = resumeInfo.UnifiedPurpose[0].preferredLocationTranslation;
+            // args.city = resumeInfo.unifiedPurposes[0].preferredLocationTranslation;
             // args.county =
-            //   resumeInfo.UnifiedPurpose[0].preferredCityDistrictTranslation
+            //   resumeInfo.unifiedPurposes[0].preferredCityDistrictTranslation
             //     .split("-")
             //     .pop();
             // defaultParams.S_SOU_WORK_CITY =
-            //   resumeInfo.UnifiedPurpose[0].preferredCityDistrict.split(":").pop();
-            // defaultParams.S_SOU_SALARY = resumeInfo.UnifiedPurpose[0].preferredSalary;
+            //   resumeInfo.unifiedPurposes[0].preferredCityDistrict.split(":").pop();
+            // defaultParams.S_SOU_SALARY = resumeInfo.unifiedPurposes[0].preferredSalary;
             // defaultParams.S_SOU_POSITION_TYPE =
-            //   resumeInfo.UnifiedPurpose[0].preferredJobNature;
+            //   resumeInfo.unifiedPurposes[0].preferredJobNature;
         }
-        if (resumeInfo.EducationExperience &&
-            resumeInfo.EducationExperience.length > 0) {
+        if (resumeInfo.educationExperiences &&
+            resumeInfo.educationExperiences.length > 0) {
             defaultParams.S_SOU_EDUCATION_LOWESTLEVEL =
-                resumeInfo.EducationExperience.map((item) => item.eduBackground).join(";");
+                resumeInfo.educationExperiences
+                    .map((item) => item.eduBackground)
+                    .join(";");
         }
-        if (resumeInfo.Profile && resumeInfo.Profile.length > 0) {
-            defaultParams.S_SOU_WORK_EXPERIENCE = getWorkExpCodeByYear(resumeInfo.Profile[0].yearWorkingTranslation);
+        if (resumeInfo.profile && resumeInfo.profile.length > 0) {
+            defaultParams.S_SOU_WORK_EXPERIENCE = getWorkExpCodeByYear(resumeInfo.profile[0].yearWorkingTranslation);
         }
         let params = formatRequestParams(args, resumeNumber);
         params = {
@@ -570,16 +587,13 @@ server.addTool({
             delete params.cityCode;
         }
         params.S_SOU_SALARY = formatSalary(params.S_SOU_SALARY);
-        console.log("params", params);
         const positionResponse = await searchPositions({
             ...params,
         });
-        console.log("positionResponse", positionResponse.data.count);
-        const moreUrl = resumeInfo.UnifiedPurpose.length == 1
+        const moreUrl = resumeInfo.unifiedPurposes.length == 1
             ? formatMorePositionsUrl(params, cityCode, cityAreaCode)
             : "";
         if (positionResponse.code == 200) {
-            console.log("positionResponse.data.list.length", positionResponse.data.list.length);
             return {
                 content: [
                     {
@@ -609,7 +623,13 @@ server.addTool({
                                         totalCount: positionResponse.data.count,
                                         isEndPage: positionResponse.data.isEndPage == 1,
                                     },
-                                    message: `${formatResponsePositionsTemplate(positionResponse, args.pageIndex, args.pageSize, moreUrl)}`,
+                                    message: `${formatResponsePositionsTemplate({
+                                        positionResponse,
+                                        pageIndex: args.pageIndex,
+                                        pageSize: args.pageSize,
+                                        moreUrl,
+                                        type: "card-list",
+                                    })}`,
                                 })}`}`,
                     },
                 ],
@@ -666,7 +686,6 @@ server.addTool({
                 content: [{ type: "text", text: "职位编号不能为空" }],
             };
         }
-        console.log("... args: ", args);
         const responseInfo = await beforeDeliveryPositions({
             at: args.at,
             rt: args.rt,

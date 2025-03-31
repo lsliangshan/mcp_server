@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Urls, } from "../types/types.js";
 import { v4 as uuidv4 } from "uuid";
 export function getResumeDetailPC(params) {
@@ -158,7 +159,7 @@ export function getJobDelivered(params) {
         }
     });
 }
-export function searchPositions(params) {
+export function searchPositionsPC(params) {
     return new Promise(async (resolve) => {
         const apiUrl = `${Urls.zhaopin}/c/i/search/positions`;
         const response = await fetch(apiUrl, {
@@ -169,7 +170,31 @@ export function searchPositions(params) {
             body: JSON.stringify(params),
         });
         const data = await response.json();
-        console.log("... searchPositions: ", data);
+        if (data.code == 200 && data.data) {
+            resolve({
+                code: 200,
+                data: data.data,
+            });
+        }
+        else {
+            resolve({
+                code: data.code,
+                data: [],
+            });
+        }
+    });
+}
+export function searchPositions(params) {
+    return new Promise(async (resolve) => {
+        const apiUrl = `${Urls.zhaopin_m}/api/sou/search-position`;
+        const response = await axios.get(apiUrl, {
+            params: {
+                ...params,
+                platform: 7,
+                _v: Math.random(),
+            },
+        });
+        const data = response.data;
         if (data.code == 200 && data.data) {
             resolve({
                 code: 200,
@@ -240,7 +265,6 @@ export function deliveryPositions(params) {
             }),
         });
         const data = await response.json();
-        console.log("... deliveryPositions: ", data);
         if (data && !data.error) {
             resolve({
                 code: 200,
@@ -266,7 +290,6 @@ export function getPositionDetail(params) {
             },
         });
         const data = await response.json();
-        console.log("... deliveryPositions: ", data);
         if (data && data.code == 200 && data.data) {
             resolve({
                 code: 200,
