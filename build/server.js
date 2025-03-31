@@ -109,11 +109,6 @@ server.addTool({
                 ],
             };
         }
-        // const jobIntentionInfo = ['期望职位', '期望行业', '期望城市', '期望薪资', '期望工作性质']
-        // const profileInfo = ['姓名', '性别', '当前身份', '出生日期', '户口所在地', '现居住地', '政治面貌', '最高学历', '手机号码', '电子邮箱']
-        // const educationInfo = ['学校名称', '学历', '专业', '在校时间']
-        // const workExperienceInfo = ['公司名称', '所属行业', '职位名称', '拥有技能', '在职时间', '离职时间', '当前月薪', '工作描述或内容']
-        // const projectExperienceInfo = ['项目名称', '项目描述', '项目开始时间', '项目结束时间']
         const resumeDetail = await getResumeDetail({
             resumeNumber: resumeNumber,
             at: args.at,
@@ -235,42 +230,6 @@ server.addTool({
                     },
                 ],
             };
-            // return {
-            //   content: [
-            //     {
-            //       type: "text",
-            //       text: `${
-            //         resumeDetail.data.length > 0 ? "投递记录: " : ""
-            //       } ${resumeDetail.data
-            //         .map(
-            //           (item: any) =>
-            //             `职位名称: ${item.jobTitle} - 薪资: ${
-            //               item.salary
-            //             } - 公司名称: ${item.companyName} - 投递时间: ${
-            //               item.msgTime
-            //             } - 投递状态: ${jobDeliveredStatus[`${item.msgType}`]}`
-            //         )
-            //         .join("\n")}
-            //       ${
-            //         resumeDetail.data.length > 0
-            //           ? "如果用户只想获取投递记录的职位名称，请只返回用户投递的职位名称，不要返回其他内容。"
-            //           : ""
-            //       }
-            //       ${
-            //         resumeDetail.data.length < 1
-            //           ? "如果用户想获取投递记录，则返回没有查询到投递记录，不要幻想投递记录"
-            //           : "如果用户想获取投递记录，则返回" +
-            //             resumeDetail.data.length +
-            //             "个投递记录的卡片。"
-            //       }
-            //       ${
-            //         resumeDetail.data.length > 0
-            //           ? '卡片使用 HTML 标签，直接使用 HTML 标签，不要封装成 Markdown 格式，卡片容器添加 class="owlscript-card"，职位名称添加 class="owlscript-job-title"，薪资添加 class="owlscript-salary"，公司名称添加 class="owlscript-company-name"，投递时间添加 class="owlscript-delivery-time"，投递状态添加 class="owlscript-delivery-status"。职位名称和公司名称元素要用 <p> 标签包裹。卡片内容包括职位名称、薪资、公司名称、投递时间、投递状态（如果投递子状态非空，则显示为投递子状态），职位名称、公司名称添加超链，超链点击后，分别跳转至职位详情页、公司详情页。直接返回每个字段的值，不要显示字段名称。如：职位名称等'
-            //           : ""
-            //       }`,
-            //     },
-            //   ],
-            // };
         }
         else {
             return {
