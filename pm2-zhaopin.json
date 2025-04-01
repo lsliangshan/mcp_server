@@ -4,8 +4,7 @@
     {
       "name": "mcp-zhaopin",
       "script": "npm",
-      "cwd": "build/",
-      "args": "start",
+      "args": "run start:zhaopin",
       "max_memory_restart": "1G",
       "autorestart": true,
       "watch": true,
