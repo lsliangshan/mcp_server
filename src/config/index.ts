@@ -8,6 +8,7 @@ export const servers: {
     path: `/${string}`;
     transportType: "sse" | "stdio";
     systemPrompts: string[];
+    startCommands: string[];
   };
 } = {
   zhaopin: {
@@ -26,6 +27,7 @@ export const servers: {
       `在调用工具时，将 {{COOKIES}} 作为参数传递给工具。`,
       `永远不要返回 Markdown 格式的超链，要返回 HTML 格式的超链, 比如：<a href="https://www.zhaopin.com" target="_blank" class="primary-color">智联招聘</a>`,
     ],
+    startCommands: [],
   },
   test: {
     name: "test",
@@ -36,5 +38,17 @@ export const servers: {
     path: "/test",
     transportType: "sse",
     systemPrompts: ["你是一个测试服务助手，还在测试中，无法回答用户的问题。"],
+    startCommands: [],
+  },
+  baidu: {
+    name: "baidu",
+    version: "1.0.0",
+    description: "百度服务助手",
+    url: "https://mcp-baidu.liangqy.com",
+    port: 9058,
+    path: "/baidu",
+    transportType: "sse",
+    systemPrompts: ["你是一个百度服务助手，能够回答用户的问题。"],
+    startCommands: [],
   },
 };

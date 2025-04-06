@@ -7,11 +7,14 @@
   "scripts": {
     "dev:zhaopin": "tsc -w & chmod 755 build/servers/zhaopin.js & npx tsx build/servers/zhaopin.js",
     "dev:test": "tsc -w & chmod 755 build/servers/test.js & npx tsx build/servers/test.js",
-    "dev": "npm run dev:zhaopin & npm run dev:test",
+    "dev:baidu": "tsc -w & chmod 755 build/servers/baidu.js & npx tsx build/servers/baidu.js",
+    "dev": "npm run dev:zhaopin & npm run dev:test & npm run dev:baidu",
     "start:zhaopin": "npx tsx build/servers/zhaopin.js",
     "start:test": "npx tsx build/servers/test.js",
+    "start:baidu": "npx tsx build/servers/baidu.js",
     "pm2:zhaopin": "pm2 startOrGracefulReload pm2-zhaopin.json",
-    "pm2:test": "pm2 startOrGracefulReload pm2-test.json"
+    "pm2:test": "pm2 startOrGracefulReload pm2-test.json",
+    "pm2:baidu": "pm2 startOrGracefulReload pm2-baidu.json"
   },
   "files": [
     "build"
