@@ -5,11 +5,11 @@
       "name": "mcp-test",
       "script": "npm",
       "args": "run start:test",
-      "max_memory_restart": "1G",
+      "max_memory_restart": "512M",
       "autorestart": true,
       "watch": true,
       "exec_mode": "cluster",
-      "instances": 2,
+      "instances": 1,
       "node_args": "",
       "env": {
         "NODE_ENV": "production"

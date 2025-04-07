@@ -9,19 +9,19 @@ const server = new FastMCP({
 
 server.addTool({
   name: "introduce",
-  description:
-    "自我介绍",
+  description: "自我介绍",
   parameters: z.object({}),
   execute: async (args) => {
     return {
       content: [
         {
           type: "text",
-          text: `JSON: ${JSON.stringify({
-            code: 200,
-            finally: true,
-            message: `你好，我是百度服务器，我正在测试中，请稍后再试。`,
-          })}`,
+          text: `你好，我是百度服务器，我正在测试中，请稍后再试。`,
+          // text: `JSON: ${JSON.stringify({
+          //   code: 200,
+          //   finally: true,
+          //   message: `你好，我是百度服务器，我正在测试中，请稍后再试。`,
+          // })}`,
         },
       ],
     };
