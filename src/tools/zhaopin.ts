@@ -251,6 +251,7 @@ export function searchPositions(params: SearchPositionsOptions): Promise<{
         _v: Math.random(),
       },
     });
+
     const data = response.data;
 
     if (data.code == 200 && data.data) {

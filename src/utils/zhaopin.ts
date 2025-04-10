@@ -5,6 +5,7 @@ import {
   findSubway,
   findSubwayStation,
 } from "../tools/db.js";
+import { getResumeDetail, getResumeNumber } from "../tools/zhaopin.js";
 import {
   companySizes,
   companyTypes,
@@ -485,10 +486,10 @@ export function jobCardTemplate(
 
 export function formatResponsePositionsTemplate(params: {
   positionResponse: any;
-  pageIndex: number;
-  pageSize: number;
+  pageIndex?: number;
+  pageSize?: number;
   moreUrl?: string;
-  type: "card-list" | "delivery-list";
+  type: "card-list" | "delivery-list" | "batch-delivery-list";
 }) {
   const {
     positionResponse,
@@ -498,8 +499,13 @@ export function formatResponsePositionsTemplate(params: {
     type = "card-list",
   } = params;
 
+  let newType = type;
+  if (newType === "batch-delivery-list") {
+    newType = "delivery-list";
+  }
+
   let cardsTemplate = positionResponse.data.list
-    .map((item: any) => jobCardTemplate(item, type))
+    .map((item: any) => jobCardTemplate(item, newType))
     .join("")
     .replaceAll("\n", "");
   let tip1 = "";
@@ -508,15 +514,22 @@ export function formatResponsePositionsTemplate(params: {
       "共查询到 <span class='primary-color'>" +
       positionResponse.data.count +
       "</span> 个投递记录";
-  } else {
+  } else if (type === "card-list") {
     tip1 =
       "共为您匹配到 <span class='primary-color'>" +
       positionResponse.data.count +
       "</span> 个符合要求的职位";
+  } else {
+    tip1 =
+      "共为您推荐 <span class='primary-color'>" +
+      positionResponse.data.count +
+      "</span> 个职位";
   }
   let tip2 = "";
   if (type === "delivery-list") {
     tip2 = "查看全部投递记录";
+  } else if (type === "card-list") {
+    tip2 = "查看全部职位";
   } else {
     tip2 = "查看全部职位";
   }
@@ -524,9 +537,17 @@ export function formatResponsePositionsTemplate(params: {
   const beforeTemplate = `<div class="owlscript-positions-tip">
         <div class="owlscript-positions-tip-left">
           <div class="owlscript-positions-tip-left-top">${tip1}</div>
-          <div class="owlscript-positions-tip-left-bottom">第 <p class="owlscript-positions-tip-left-bottom-page-index">${pageIndex}</p> 页，共 <p class="owlscript-positions-tip-left-bottom-page-total">${Math.ceil(
-    positionResponse.data.count / pageSize
-  )}</p> 页</div>
+          ${
+            params.type === "batch-delivery-list"
+              ? `
+          
+          `
+              : `<div class="owlscript-positions-tip-left-bottom">第 <p class="owlscript-positions-tip-left-bottom-page-index">${
+                  pageIndex || 1
+                }</p> 页，共 <p class="owlscript-positions-tip-left-bottom-page-total">${Math.ceil(
+                  positionResponse.data.count / (pageSize || 20)
+                )}</p> 页</div>`
+          }
         </div>
         <div class="owlscript-positions-tip-right">
           ${
@@ -585,4 +606,151 @@ export function getHighestEducation(education: any) {
       (a: any, b: any) => educationList.indexOf(a) - educationList.indexOf(b)
     );
   return educationIndexs[0];
+}
+
+export async function getPositionRecommendationParams(
+  args: any
+): Promise<{ params: any; moreUrl: string }> {
+  const { resumeNumber } = await getResumeNumber({
+    at: args.at,
+    rt: args.rt,
+  });
+
+  // const resumeNumber =
+  //   "EC9DAB87216F72DC3B910673E5810CED0A6A81B11C9C499B4DDAA14B590CC6C3B1CE91B9CB9DF31543D6C95C2F7B2258_A0001";
+
+  const resumeInfo: any = await getResumeDetail({
+    at: args.at,
+    rt: args.rt,
+    resumeNumber,
+  });
+
+  const defaultParams: any = {
+    // S_SOU_JD_JOB_LEVEL3: "",
+    S_SOU_FULL_INDEX: "", // M站接口用 S_SOU_FULL_INDEX，不用 S_SOU_JD_JOB_LEVEL3
+    S_SOU_JD_INDUSTRY_LEVEL: "",
+    S_SOU_WORK_CITY: "",
+    S_SOU_SALARY: "",
+    S_SOU_EDUCATION_LOWESTLEVEL: "",
+    S_SOU_WORK_EXPERIENCE: "",
+    S_SOU_POSITION_TYPE: "",
+  };
+
+  let workCity = "";
+  let workCityArea = "";
+
+  if (resumeInfo.unifiedPurposes && resumeInfo.unifiedPurposes.length > 0) {
+    // 使用用户的全部求职意向
+    let jt = resumeInfo.unifiedPurposes.map(
+      (item: any) => item.newPreferredJobType
+    );
+    defaultParams.S_SOU_JD_JOB_LEVEL3 = Array.from(new Set(jt)).join(";");
+
+    let jt2 = resumeInfo.unifiedPurposes.map(
+      (item: any) => item.pnewPreferredJobTypeTranslation
+    );
+    defaultParams.S_SOU_FULL_INDEX = Array.from(new Set(jt2)).join(";");
+
+    let ind = resumeInfo.unifiedPurposes
+      .map((item: any) => item.newPreferredIndustry)
+      .join(",");
+    defaultParams.S_SOU_JD_INDUSTRY_LEVEL = Array.from(
+      new Set(ind.split(","))
+    ).join(";");
+
+    // M站搜索，S_SOU_WORK_CITY 用 市，不用区
+    defaultParams.S_SOU_WORK_CITY = resumeInfo.unifiedPurposes
+      .map((item: any) => item.preferredCityDistrict.split(":")[0])
+      .join(";");
+
+    // defaultParams.S_SOU_WORK_CITY = resumeInfo.unifiedPurposes
+    //   .map((item: any) => item.preferredCityDistrict.split(":").pop())
+    //   .join(";");
+
+    [workCity, workCityArea = ""] =
+      resumeInfo.unifiedPurposes[0].preferredCityDistrictTranslation.split("-");
+
+    let s = resumeInfo.unifiedPurposes.map((item: any) => item.preferredSalary);
+    defaultParams.S_SOU_SALARY = Array.from(new Set(s)).join(";");
+
+    let js = resumeInfo.unifiedPurposes
+      .map((item: any) => item.preferredJobNature)
+      .join(",");
+    defaultParams.S_SOU_POSITION_TYPE = Array.from(new Set(js.split(","))).join(
+      ";"
+    );
+
+    // // 此处只取 第一份求职意向
+    // defaultParams.S_SOU_JD_JOB_LEVEL3 =
+    //   resumeInfo.unifiedPurposes[0].newPreferredJobType;
+
+    // if (resumeInfo.unifiedPurposes[0].newPreferredIndustry) {
+    //   defaultParams.S_SOU_JD_INDUSTRY_LEVEL =
+    //     resumeInfo.unifiedPurposes[0].newPreferredIndustry;
+    // } else {
+    //   delete defaultParams.S_SOU_JD_INDUSTRY_LEVEL;
+    // }
+
+    // args.city = resumeInfo.unifiedPurposes[0].preferredLocationTranslation;
+    // args.county =
+    //   resumeInfo.unifiedPurposes[0].preferredCityDistrictTranslation
+    //     .split("-")
+    //     .pop();
+
+    // defaultParams.S_SOU_WORK_CITY =
+    //   resumeInfo.unifiedPurposes[0].preferredCityDistrict.split(":").pop();
+
+    // defaultParams.S_SOU_SALARY = resumeInfo.unifiedPurposes[0].preferredSalary;
+
+    // defaultParams.S_SOU_POSITION_TYPE =
+    //   resumeInfo.unifiedPurposes[0].preferredJobNature;
+  }
+
+  if (
+    resumeInfo.educationExperiences &&
+    resumeInfo.educationExperiences.length > 0
+  ) {
+    defaultParams.S_SOU_EDUCATION_LOWESTLEVEL = resumeInfo.educationExperiences
+      .map((item: any) => item.eduBackground)
+      .join(";");
+  }
+
+  if (resumeInfo.profile && resumeInfo.profile.length > 0) {
+    defaultParams.S_SOU_WORK_EXPERIENCE = getWorkExpCodeByYear(
+      resumeInfo.profile[0].yearWorkingTranslation
+    );
+  }
+
+  let params = formatRequestParams(
+    { ...args, city: workCity, county: workCityArea },
+    resumeNumber
+  );
+
+  params = {
+    ...defaultParams,
+    ...params,
+  };
+
+  let cityAreaCode = "";
+  let cityCode = "";
+  if (params.cityAreaCode) {
+    cityAreaCode = params.cityAreaCode;
+    delete params.cityAreaCode;
+  }
+  if (params.cityCode) {
+    cityCode = params.cityCode;
+    delete params.cityCode;
+  }
+
+  params.S_SOU_SALARY = formatSalary(params.S_SOU_SALARY);
+
+  const moreUrl =
+    resumeInfo.unifiedPurposes.length == 1
+      ? formatMorePositionsUrl(params, cityCode, cityAreaCode)
+      : "";
+
+  return {
+    params,
+    moreUrl,
+  };
 }

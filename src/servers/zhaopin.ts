@@ -22,6 +22,7 @@ import {
   formatRequestParams,
   formatResponsePositionsTemplate,
   formatSalary,
+  getPositionRecommendationParams,
   getReponseTemplate,
   getWorkExpCodeByYear,
   translateToPositions,
@@ -586,130 +587,132 @@ server.addTool({
       };
     }
 
-    const { resumeNumber } = await getResumeNumber({
-      at: args.at,
-      rt: args.rt,
-    });
+    // const { resumeNumber } = await getResumeNumber({
+    //   at: args.at,
+    //   rt: args.rt,
+    // });
 
-    // const resumeNumber =
-    //   "EC9DAB87216F72DC3B910673E5810CED0A6A81B11C9C499B4DDAA14B590CC6C3B1CE91B9CB9DF31543D6C95C2F7B2258_A0001";
+    // // const resumeNumber =
+    // //   "EC9DAB87216F72DC3B910673E5810CED0A6A81B11C9C499B4DDAA14B590CC6C3B1CE91B9CB9DF31543D6C95C2F7B2258_A0001";
 
-    const resumeInfo: any = await getResumeDetail({
-      at: args.at,
-      rt: args.rt,
-      resumeNumber,
-    });
+    // const resumeInfo: any = await getResumeDetail({
+    //   at: args.at,
+    //   rt: args.rt,
+    //   resumeNumber,
+    // });
 
-    const defaultParams: any = {
-      S_SOU_JD_JOB_LEVEL3: "",
-      S_SOU_JD_INDUSTRY_LEVEL: "",
-      S_SOU_WORK_CITY: "",
-      S_SOU_SALARY: "",
-      S_SOU_EDUCATION_LOWESTLEVEL: "",
-      S_SOU_WORK_EXPERIENCE: "",
-      S_SOU_POSITION_TYPE: "",
-    };
+    // const defaultParams: any = {
+    //   S_SOU_JD_JOB_LEVEL3: "",
+    //   S_SOU_JD_INDUSTRY_LEVEL: "",
+    //   S_SOU_WORK_CITY: "",
+    //   S_SOU_SALARY: "",
+    //   S_SOU_EDUCATION_LOWESTLEVEL: "",
+    //   S_SOU_WORK_EXPERIENCE: "",
+    //   S_SOU_POSITION_TYPE: "",
+    // };
 
-    if (resumeInfo.unifiedPurposes && resumeInfo.unifiedPurposes.length > 0) {
-      // 使用用户的全部求职意向
-      let jt = resumeInfo.unifiedPurposes.map(
-        (item: any) => item.newPreferredJobType
-      );
-      defaultParams.S_SOU_JD_JOB_LEVEL3 = Array.from(new Set(jt)).join(";");
+    // if (resumeInfo.unifiedPurposes && resumeInfo.unifiedPurposes.length > 0) {
+    //   // 使用用户的全部求职意向
+    //   let jt = resumeInfo.unifiedPurposes.map(
+    //     (item: any) => item.newPreferredJobType
+    //   );
+    //   defaultParams.S_SOU_JD_JOB_LEVEL3 = Array.from(new Set(jt)).join(";");
 
-      let ind = resumeInfo.unifiedPurposes
-        .map((item: any) => item.newPreferredIndustry)
-        .join(",");
-      defaultParams.S_SOU_JD_INDUSTRY_LEVEL = Array.from(
-        new Set(ind.split(","))
-      ).join(";");
+    //   let ind = resumeInfo.unifiedPurposes
+    //     .map((item: any) => item.newPreferredIndustry)
+    //     .join(",");
+    //   defaultParams.S_SOU_JD_INDUSTRY_LEVEL = Array.from(
+    //     new Set(ind.split(","))
+    //   ).join(";");
 
-      defaultParams.S_SOU_WORK_CITY = resumeInfo.unifiedPurposes
-        .map((item: any) => item.preferredCityDistrict.split(":").pop())
-        .join(";");
+    //   defaultParams.S_SOU_WORK_CITY = resumeInfo.unifiedPurposes
+    //     .map((item: any) => item.preferredCityDistrict.split(":").pop())
+    //     .join(";");
 
-      let s = resumeInfo.unifiedPurposes.map(
-        (item: any) => item.preferredSalary
-      );
-      defaultParams.S_SOU_SALARY = Array.from(new Set(s)).join(";");
+    //   let s = resumeInfo.unifiedPurposes.map(
+    //     (item: any) => item.preferredSalary
+    //   );
+    //   defaultParams.S_SOU_SALARY = Array.from(new Set(s)).join(";");
 
-      let js = resumeInfo.unifiedPurposes
-        .map((item: any) => item.preferredJobNature)
-        .join(",");
-      defaultParams.S_SOU_POSITION_TYPE = Array.from(
-        new Set(js.split(","))
-      ).join(";");
+    //   let js = resumeInfo.unifiedPurposes
+    //     .map((item: any) => item.preferredJobNature)
+    //     .join(",");
+    //   defaultParams.S_SOU_POSITION_TYPE = Array.from(
+    //     new Set(js.split(","))
+    //   ).join(";");
 
-      // // 此处只取 第一份求职意向
-      // defaultParams.S_SOU_JD_JOB_LEVEL3 =
-      //   resumeInfo.unifiedPurposes[0].newPreferredJobType;
+    //   // // 此处只取 第一份求职意向
+    //   // defaultParams.S_SOU_JD_JOB_LEVEL3 =
+    //   //   resumeInfo.unifiedPurposes[0].newPreferredJobType;
 
-      // if (resumeInfo.unifiedPurposes[0].newPreferredIndustry) {
-      //   defaultParams.S_SOU_JD_INDUSTRY_LEVEL =
-      //     resumeInfo.unifiedPurposes[0].newPreferredIndustry;
-      // } else {
-      //   delete defaultParams.S_SOU_JD_INDUSTRY_LEVEL;
-      // }
+    //   // if (resumeInfo.unifiedPurposes[0].newPreferredIndustry) {
+    //   //   defaultParams.S_SOU_JD_INDUSTRY_LEVEL =
+    //   //     resumeInfo.unifiedPurposes[0].newPreferredIndustry;
+    //   // } else {
+    //   //   delete defaultParams.S_SOU_JD_INDUSTRY_LEVEL;
+    //   // }
 
-      // args.city = resumeInfo.unifiedPurposes[0].preferredLocationTranslation;
-      // args.county =
-      //   resumeInfo.unifiedPurposes[0].preferredCityDistrictTranslation
-      //     .split("-")
-      //     .pop();
+    //   // args.city = resumeInfo.unifiedPurposes[0].preferredLocationTranslation;
+    //   // args.county =
+    //   //   resumeInfo.unifiedPurposes[0].preferredCityDistrictTranslation
+    //   //     .split("-")
+    //   //     .pop();
 
-      // defaultParams.S_SOU_WORK_CITY =
-      //   resumeInfo.unifiedPurposes[0].preferredCityDistrict.split(":").pop();
+    //   // defaultParams.S_SOU_WORK_CITY =
+    //   //   resumeInfo.unifiedPurposes[0].preferredCityDistrict.split(":").pop();
 
-      // defaultParams.S_SOU_SALARY = resumeInfo.unifiedPurposes[0].preferredSalary;
+    //   // defaultParams.S_SOU_SALARY = resumeInfo.unifiedPurposes[0].preferredSalary;
 
-      // defaultParams.S_SOU_POSITION_TYPE =
-      //   resumeInfo.unifiedPurposes[0].preferredJobNature;
-    }
+    //   // defaultParams.S_SOU_POSITION_TYPE =
+    //   //   resumeInfo.unifiedPurposes[0].preferredJobNature;
+    // }
 
-    if (
-      resumeInfo.educationExperiences &&
-      resumeInfo.educationExperiences.length > 0
-    ) {
-      defaultParams.S_SOU_EDUCATION_LOWESTLEVEL =
-        resumeInfo.educationExperiences
-          .map((item: any) => item.eduBackground)
-          .join(";");
-    }
+    // if (
+    //   resumeInfo.educationExperiences &&
+    //   resumeInfo.educationExperiences.length > 0
+    // ) {
+    //   defaultParams.S_SOU_EDUCATION_LOWESTLEVEL =
+    //     resumeInfo.educationExperiences
+    //       .map((item: any) => item.eduBackground)
+    //       .join(";");
+    // }
 
-    if (resumeInfo.profile && resumeInfo.profile.length > 0) {
-      defaultParams.S_SOU_WORK_EXPERIENCE = getWorkExpCodeByYear(
-        resumeInfo.profile[0].yearWorkingTranslation
-      );
-    }
+    // if (resumeInfo.profile && resumeInfo.profile.length > 0) {
+    //   defaultParams.S_SOU_WORK_EXPERIENCE = getWorkExpCodeByYear(
+    //     resumeInfo.profile[0].yearWorkingTranslation
+    //   );
+    // }
 
-    let params = formatRequestParams(args, resumeNumber);
+    // let params = formatRequestParams(args, resumeNumber);
 
-    params = {
-      ...defaultParams,
-      ...params,
-    };
+    // params = {
+    //   ...defaultParams,
+    //   ...params,
+    // };
 
-    let cityAreaCode = "";
-    let cityCode = "";
-    if (params.cityAreaCode) {
-      cityAreaCode = params.cityAreaCode;
-      delete params.cityAreaCode;
-    }
-    if (params.cityCode) {
-      cityCode = params.cityCode;
-      delete params.cityCode;
-    }
+    // let cityAreaCode = "";
+    // let cityCode = "";
+    // if (params.cityAreaCode) {
+    //   cityAreaCode = params.cityAreaCode;
+    //   delete params.cityAreaCode;
+    // }
+    // if (params.cityCode) {
+    //   cityCode = params.cityCode;
+    //   delete params.cityCode;
+    // }
 
-    params.S_SOU_SALARY = formatSalary(params.S_SOU_SALARY);
+    // params.S_SOU_SALARY = formatSalary(params.S_SOU_SALARY);
+
+    // const moreUrl =
+    //   resumeInfo.unifiedPurposes.length == 1
+    //     ? formatMorePositionsUrl(params, cityCode, cityAreaCode)
+    //     : "";
+
+    const { params, moreUrl } = await getPositionRecommendationParams(args);
 
     const positionResponse: any = await searchPositions({
       ...params,
     });
-
-    const moreUrl =
-      resumeInfo.unifiedPurposes.length == 1
-        ? formatMorePositionsUrl(params, cityCode, cityAreaCode)
-        : "";
 
     if (positionResponse.code == 200) {
       return {
@@ -759,7 +762,7 @@ server.addTool({
         content: [
           {
             type: "text",
-            text: "职位搜索失败",
+            text: "职位推荐失败",
           },
         ],
       };
@@ -1003,6 +1006,402 @@ server.addTool({
     };
   },
 });
+
+// server.addTool({
+//   name: "deliveryPositionsBatch",
+//   description: "批量投递职位。默认投递 6 个职位。",
+//   parameters: z.object({
+//     at: z.string().optional(),
+//     rt: z.string().optional(),
+//     /// 职位数量
+//     count: z.number().optional().default(6).describe("职位数量"),
+//     /// 搜索关键词，职位或公司名称
+//     keyword: z.string().optional().describe("搜索关键词，职位或公司名称"),
+//     /// 职位类别
+//     jobType: z.string().optional().describe("职位类别"),
+//     order: z
+//       .nativeEnum(EOrder)
+//       .optional()
+//       .default(EOrder.智能匹配)
+//       .describe("排序"),
+//     /// 公司行业
+//     industry: z
+//       .nativeEnum(EIndustries)
+//       .array()
+//       .optional()
+//       .describe("公司行业。"),
+//     subway: z
+//       .string()
+//       .optional()
+//       .describe(
+//         "地铁沿线、线路名称中不要带城市名，如：北京1号线，转换成'1号线'"
+//       ),
+//     subwayStation: z
+//       .string()
+//       .optional()
+//       .describe(
+//         "地铁站。地铁站名称中不要带城市名，如：北京大望路站，转换成'大望路'"
+//       ),
+//     /// 省份
+//     province: z
+//       .string()
+//       .optional()
+//       // .describe('省份。直辖市、自治区、特别行政区显示为市，不显示为省份'),
+//       .describe(
+//         "省份。\n直辖市、自治区、特别行政区的该字段，直接用直辖市、自治区、特别行政区。例如：北京市的该字段也是”北京市“。\n名称标准化，如：湖南省转换成湖南，不要显示省字"
+//       ),
+//     /// 城市
+//     city: z
+//       .string()
+//       .optional()
+//       .describe(
+//         "城市。\n不要将区县显示在该字段。例如：北京的朝阳区，不要显示在该字段。\n名称标准化，如：长沙市转换成长沙，不要显示市字"
+//       ),
+//     /// 区县
+//     county: z.string().optional().describe("区县，例如：海淀区，芙蓉区"),
+//     /// 薪资范围
+//     salaryType: z
+//       .string()
+//       .optional()
+//       .describe(
+//         "薪资范围，格式为：MIN_SALARY,MAX_SALARY，例如：10000,20000。最低薪资为 0000，最高薪资为 9999999"
+//       ),
+//     /// 学历要求
+//     educationType: z
+//       .string()
+//       .optional()
+//       .describe(
+//         "学历要求，例如：初中及以下、高中、中专/中技、大专、本科、硕士、MBA/EMBA、博士"
+//       ),
+//     /// 工作经验
+//     workExpType: z
+//       .string()
+//       .optional()
+//       .describe(
+//         "工作经验，例如：无经验、1年以下、1-3年、3-5年、5-10年、10年以上"
+//       ),
+//     /// 职位类型
+//     jobStatus: z
+//       .string()
+//       .optional()
+//       .describe("职位类型，例如：全职、兼职/临时、实习、校园"),
+//     /// 公司性质
+//     companyType: z
+//       .string()
+//       .optional()
+//       .describe(
+//         "公司性质，例如：国企、外企、合资、民营、上市公司、股份制企业、事业单位、其他"
+//       ),
+//     /// 公司规模，可选值：20人以下、20-99人、100-299人、300-499人、500-999人、1000-9999人、10000人以上
+//     companySize: z
+//       .nativeEnum(ECompanySize)
+//       .optional()
+//       .describe(
+//         "公司规模，按序，优先选择第一个满足条件的公司规模，如 200人以上，应该选择 100-299人，不要选择 10000人以上或其他"
+//       ),
+//     /// 简历索引，从1开始
+//     resumeIndex: z
+//       .number()
+//       .optional()
+//       .default(1)
+//       .describe(
+//         "简历索引，指定索引的简历，会被用于职位投递。索引从 1 开始，默认是第一份简历。"
+//       ),
+//   }),
+//   execute: async (args) => {
+//     if (!args.at || args.at == "undefined") {
+//       delete args.at;
+//     }
+//     if (!args.rt || args.rt == "undefined") {
+//       delete args.rt;
+//     }
+
+//     const templates = getReponseTemplate();
+
+//     if (!args.at || !args.rt) {
+//       return {
+//         content: [
+//           {
+//             type: "text",
+//             text: `登录后才能投递职位。
+//             \n${templates.login}`,
+//           },
+//         ],
+//       };
+//     }
+
+//     // 获取职位编号
+//     const { params, moreUrl } = await getPositionRecommendationParams(args);
+
+//     const positionResponse: any = await searchPositions({
+//       ...params,
+//     });
+
+//     if (positionResponse.code == 200) {
+//       const recommendPositions = positionResponse.data.list;
+//       return {
+//         content: [
+//           {
+//             type: "text",
+//             text: `${
+//               recommendPositions.length < 1
+//                 ? `JSON: ${JSON.stringify({
+//                     code: 200,
+//                     finally: true, // unmodify: true 表示不要修改模板
+//                     message: `💡 很抱歉，暂时没有找到与 **您设置的条件** 和 **求职意向** 相匹配的职位
+
+// 建议尝试：
+
+// 1️⃣ **放宽筛选条件**（如地区/薪资范围）
+
+// 2️⃣ **优化求职意向**（点击「<a href="https://i.zhaopin.com/resume" target="_blank" class="primary-color">我的简历</a>」优化求职意向）
+
+// 或使用搜索工具探索更多机会，搜索工具不会受求职意向限制：
+
+// 🔍 例如输入『<a href="javascript:void(0)" data-action="send-message" data-message='批量投递北京， ”${params.S_SOU_FULL_INDEX}“ 相关职位' class="primary-color">批量投递北京， ”${params.S_SOU_FULL_INDEX}“ 相关职位</a>』`,
+//                     // message: `没有符合“当前搜索条件”和“用户的求职意向”的职位。建议修改条件或求职意向后重新查询。也可以使用搜索工具，搜索职位。如：搜索 “${args.keyword}” 相关职位。`,
+//                   })}`
+//                 : // `没有符合“当前搜索条件”和“用户的求职意向”的职位。建议修改条件或求职意向后重新查询。也可以使用搜索工具，搜索职位。如：搜索 “${args.keyword}” 相关职位。`
+//                   `JSON: ${JSON.stringify({
+//                     code: 200,
+//                     finally: true, // unmodify: true 表示不要修改模板
+//                     data: {
+//                       totalCount: positionResponse.data.count,
+//                       isEndPage: positionResponse.data.isEndPage == 1,
+//                     },
+//                     message: `${formatResponsePositionsTemplate({
+//                       positionResponse,
+//                       pageIndex: args.pageIndex,
+//                       pageSize: args.pageSize,
+//                       moreUrl,
+//                       type: "card-list",
+//                     })}`,
+//                   })}`
+//             }`,
+//           },
+//         ],
+//       };
+//     } else {
+//       return {
+//         content: [
+//           {
+//             type: "text",
+//             text: "职位推荐失败",
+//           },
+//         ],
+//       };
+//     }
+
+//     return {
+//       content: [
+//         {
+//           type: "text",
+//           text: `JSON: ${JSON.stringify({
+//             code: 200,
+//             finally: true, // finally: true 表示直接返回给用户
+//             message: `批量投递成功。`,
+//           })}`,
+//         },
+//       ],
+//     };
+
+//     // if (args.jobNumbers.length < 1) {
+//     //   return {
+//     //     content: [{ type: "text", text: "职位编号不能为空" }],
+//     //   };
+//     // }
+
+//     // const responseInfo: any = await beforeDeliveryPositions({
+//     //   at: args.at,
+//     //   rt: args.rt,
+//     //   jobCount: args.jobNumbers.length,
+//     // });
+
+//     // if (responseInfo.code != 200) {
+//     //   return {
+//     //     content: [
+//     //       {
+//     //         type: "text",
+//     //         text: responseInfo.message,
+//     //       },
+//     //     ],
+//     //   };
+//     // }
+
+//     // const resumes = responseInfo.data.resumes || [];
+//     // if (resumes.length < 1) {
+//     //   return {
+//     //     content: [
+//     //       {
+//     //         type: "text",
+//     //         text: `投递职位前，请先创建简历。每次都要返回创建简历的地址（<a href="https://i.zhaopin.com/resume" target="_blank" class="primary-color">创建简历</a>）`,
+//     //       },
+//     //     ],
+//     //   };
+//     // }
+
+//     // const selectedIndex = Math.max(0, args.resumeIndex - 1) || 0;
+//     // if (selectedIndex >= resumes.length) {
+//     //   return {
+//     //     content: [
+//     //       {
+//     //         type: "text",
+//     //         text: `准备使用第 ${selectedIndex + 1} 份简历投递，但是用户只有 ${
+//     //           resumes.length
+//     //         } 份简历，提示用户选择其他简历进行投递`,
+//     //       },
+//     //     ],
+//     //   };
+//     // }
+//     // const selectedResume = resumes[selectedIndex];
+//     // if (!selectedResume.cnCompleted) {
+//     //   return {
+//     //     content: [
+//     //       {
+//     //         type: "text",
+//     //         text: `准备使用第 ${
+//     //           selectedIndex + 1
+//     //         } 份简历投递，但是该简历不完整，提示用户先完善您的简历。每次都要返回完善简历的地址（<a href="https://i.zhaopin.com/resume" target="_blank" class="primary-color">完善简历</a>）`,
+//     //       },
+//     //     ],
+//     //   };
+//     // }
+//     // const resumeNumber = selectedResume.number;
+
+//     // // 获取职位详情
+//     // const positionDetail: any = await getPositionDetailBatch({
+//     //   at: args.at,
+//     //   rt: args.rt,
+//     //   numbers: args.jobNumbers,
+//     //   cvNumber: resumeNumber,
+//     // });
+
+//     // // 已投递的职位
+//     // let delivered: {
+//     //   number: string;
+//     //   cityId: string;
+//     //   positionName: string;
+//     //   companyName: string;
+//     //   salary60: string;
+//     // }[] = [];
+//     // // 未投递的职位
+//     // let unDelivered: {
+//     //   number: string;
+//     //   cityId: string;
+//     //   positionName: string;
+//     //   companyName: string;
+//     //   salary60: string;
+//     // }[] = [];
+//     // // 无效的职位
+//     // let unvalid: {
+//     //   number: string;
+//     // }[] = [];
+
+//     // positionDetail.data.forEach((item: any) => {
+//     //   if (item.code == 200) {
+//     //     if (item.data.positionDetail.hasAppliedPosition) {
+//     //       delivered.push({
+//     //         number: item.data.positionDetail.number,
+//     //         cityId: item.data.positionDetail.positionCityId,
+//     //         positionName: item.data.positionDetail.positionName,
+//     //         companyName: item.data.positionDetail.companyName,
+//     //         salary60: item.data.positionDetail.salary60,
+//     //       });
+//     //     } else {
+//     //       unDelivered.push({
+//     //         number: item.data.positionDetail.number,
+//     //         cityId: item.data.positionDetail.positionCityId,
+//     //         positionName: item.data.positionDetail.positionName,
+//     //         companyName: item.data.positionDetail.companyName,
+//     //         salary60: item.data.positionDetail.salary60,
+//     //       });
+//     //     }
+//     //   } else {
+//     //     unvalid.push({
+//     //       number: item.data.number,
+//     //     });
+//     //   }
+//     // });
+
+//     // const useJobNumberTemplate = `\n返回时，使用 职位编号的 HTML 模板替换 职位编号，HTML 模板是 <a href="https://jobs.zhaopin.com/职位编号.htm" target="_blank" class="primary-color">公司名称-职位名称-职位薪资（职位编号）</a>`;
+
+//     // const deliveredTemplate =
+//     //   delivered.length > 0
+//     //     ? `\n${delivered.length} 个重复投递的职位: ${delivered
+//     //         .map(
+//     //           (item) =>
+//     //             `${item.companyName}-${item.positionName}-${item.salary60}（${item.number}）`
+//     //         )
+//     //         .join(",")}`
+//     //     : "";
+//     // const unvalidTemplate =
+//     //   unvalid.length > 0
+//     //     ? `\n${unvalid.length} 个无效的职位: ${unvalid
+//     //         .map((item) => item.number)
+//     //         .join(",")}`
+//     //     : "";
+
+//     // if (unDelivered.length < 1) {
+//     //   return {
+//     //     content: [
+//     //       {
+//     //         type: "text",
+//     //         text: `JSON: ${JSON.stringify({
+//     //           code: 200,
+//     //           message: `没有可投递的职位。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
+//     //         ${deliveredTemplate}
+//     //         ${unvalidTemplate}
+//     //         ${useJobNumberTemplate}`,
+//     //         })}`,
+//     //       },
+//     //     ],
+//     //   };
+//     // }
+
+//     // const deliveryInfo: any = await deliveryPositions({
+//     //   at: args.at,
+//     //   rt: args.rt,
+//     //   positionNumbers: unDelivered.map((item) => item.number).join(";"),
+//     //   resumeNumber,
+//     //   cityIds: unDelivered.map((item) => item.cityId).join(";"),
+//     // });
+
+//     // if (deliveryInfo.code == 200) {
+//     //   return {
+//     //     content: [
+//     //       {
+//     //         type: "text",
+//     //         text: `JSON: ${JSON.stringify({
+//     //           code: 200,
+//     //           message: `投递成功。每次都要返回投递记录的地址（<a href="https://i.zhaopin.com/schedule" target="_blank" class="primary-color">我的投递记录</a>）
+//     //         \n${unDelivered.length} 个成功投递的职位：${unDelivered
+//     //             .map(
+//     //               (item) =>
+//     //                 `${item.companyName}-${item.positionName}-${item.salary60}（${item.number}）`
+//     //             )
+//     //             .join(",")}
+//     //         ${deliveredTemplate}
+//     //         ${unvalidTemplate}
+//     //         ${useJobNumberTemplate}`,
+//     //           data: {
+//     //             action: "delivery-response",
+//     //             jobNumbers: unDelivered.map((item) => item.number),
+//     //           },
+//     //         })}`,
+//     //       },
+//     //     ],
+//     //   };
+//     // }
+//     // return {
+//     //   content: [
+//     //     {
+//     //       type: "text",
+//     //       text: `投递失败。错误信息: ${deliveryInfo.message}`,
+//     //     },
+//     //   ],
+//     // };
+//   },
+// });
 
 server.addTool({
   name: "getMyAtRt",
