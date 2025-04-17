@@ -361,6 +361,53 @@ export function translateToPositions(delivered, total) {
     //   number: delivered.jobDetail.feedbackInfo.jobNumber,
     // };
 }
+export function jobTemplate(type = "card-list") {
+    let btn = "";
+    if (type === "delivery-list") {
+        btn = `<div class="owlscript-job-card-btn-status">投递状态</div>`;
+    }
+    else {
+        btn = `<div class="owlscript-job-card-btn-delivery" data-number="职位编号" data-city="职位所在城市">立即投递</div>`;
+    }
+    return `
+    <div class="owlscript-job-card">
+      <div class="owlscript-job-card-line1">
+          <p class="owlscript-job-card-line1-title">
+            <a href="职位链接" target="_blank">职位名称</a>
+          </p>
+          <p class="owlscript-job-card-line1-salary">薪资</p>
+        </div>
+      <div class="owlscript-job-card-line2">
+        <div class="owlscript-job-card-line2-experience">工作经验</div>
+        <div class="owlscript-job-card-line2-education">学历要求</div>
+        <div class="owlscript-job-card-line2-job-skill-tags">职位标签</div>
+        }
+      </div>
+      <div class="owlscript-job-card-line3">
+        <div class="owlscript-job-card-line3-company-logo"><img src="公司logo" alt="公司名称" /></div>
+        <div class="owlscript-job-card-line3-company-name">
+          <a href="公司链接" target="_blank">公司名称</a>
+        </div>
+      </div>
+      <div class="owlscript-job-card-line4">
+        <div class="owlscript-job-card-line4-left">
+          <div class="owlscript-job-card-line4-left-top">
+            <div class="owlscript-job-card-line4-left-top-company-industry">行业</div>
+            <div class="owlscript-job-card-line4-left-top-company-type">公司性质</div>
+            <div class="owlscript-job-card-line4-left-top-company-size">公司规模</div>
+          </div>
+          <div class="owlscript-job-card-line4-left-bottom">
+            <div class="owlscript-job-card-line4-left-bottom-address">工作地点</div>
+            <div class="owlscript-job-card-line4-left-bottom-time">投递时间</div>
+          </div>
+        </div>
+        <div class="owlscript-job-card-line4-right">
+          ${btn}
+        </div>
+      </div>
+    </div>
+    `;
+}
 export function jobCardTemplate(jobInfo, type = "card-list") {
     let btn = "";
     if (type === "delivery-list") {

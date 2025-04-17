@@ -315,6 +315,46 @@ server.addTool({
                 content: [
                     {
                         type: "text",
+                        text: `${JSON.stringify({
+                            code: 200,
+                            data: {
+                                totalCount: positionResponse.data.count,
+                                totalPage: Math.ceil(positionResponse.data.count / args.pageSize),
+                                pageIndex: args.pageIndex,
+                                pageSize: args.pageSize,
+                                list: positionResponse.data.list,
+                            },
+                        })}`,
+                    },
+                ],
+            };
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `JSON: ${JSON.stringify({
+                            data: {
+                                data: formatResponsePositionsTemplate({
+                                    positionResponse,
+                                    pageIndex: args.pageIndex,
+                                    pageSize: args.pageSize,
+                                    moreUrl,
+                                    type: "card-list",
+                                }),
+                                totalCount: positionResponse.data.count,
+                                totalPage: Math.ceil(positionResponse.data.count / args.pageSize),
+                                pageIndex: args.pageIndex,
+                                pageSize: args.pageSize,
+                            },
+                            keepOriginal: true,
+                        })}`,
+                    },
+                ],
+            };
+            return {
+                content: [
+                    {
+                        type: "text",
                         text: `${positionResponse.data.list.length < 1
                             ? "提示用户，当前条件没有查询到职位，请修改条件后重新查询。"
                             : `JSON: ${JSON.stringify({

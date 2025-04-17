@@ -25,6 +25,7 @@ import {
   getPositionRecommendationParams,
   getReponseTemplate,
   getWorkExpCodeByYear,
+  jobTemplate,
   translateToPositions,
 } from "../utils/zhaopin.js";
 import { servers } from "../config/index.js";
@@ -428,6 +429,50 @@ server.addTool({
       : "";
 
     if (positionResponse.code == 200) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `${JSON.stringify({
+              code: 200,
+              data: {
+                totalCount: positionResponse.data.count,
+                totalPage: Math.ceil(
+                  positionResponse.data.count / args.pageSize
+                ),
+                pageIndex: args.pageIndex,
+                pageSize: args.pageSize,
+                list: positionResponse.data.list,
+              },
+            })}`,
+          },
+        ],
+      };
+      return {
+        content: [
+          {
+            type: "text",
+            text: `JSON: ${JSON.stringify({
+              data: {
+                data: formatResponsePositionsTemplate({
+                  positionResponse,
+                  pageIndex: args.pageIndex,
+                  pageSize: args.pageSize,
+                  moreUrl,
+                  type: "card-list",
+                }),
+                totalCount: positionResponse.data.count,
+                totalPage: Math.ceil(
+                  positionResponse.data.count / args.pageSize
+                ),
+                pageIndex: args.pageIndex,
+                pageSize: args.pageSize,
+              },
+              keepOriginal: true,
+            })}`,
+          },
+        ],
+      };
       return {
         content: [
           {
