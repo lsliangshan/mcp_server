@@ -1,7 +1,7 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
 import { beforeDeliveryPositions, deliveryPositions, getJobDelivered, getPositionDetailBatch, getResumeDetail, getResumeNumber, searchPositions, } from "../tools/zhaopin.js";
-import { ECompanySize, JobDeliveredStatus, JobDeliveredSubStatus, EIndustries, EOrder, } from "../types/types.js";
+import { ECompanySize, JobDeliveredStatus, EIndustries, EOrder, } from "../types/types.js";
 import { dateFormat } from "../tools/date.js";
 import { formatMorePositionsUrl, formatRequestParams, formatResponsePositionsTemplate, formatSalary, getPositionRecommendationParams, getReponseTemplate, translateToPositions, } from "../utils/zhaopin.js";
 import { servers } from "../config/index.js";
@@ -119,7 +119,7 @@ server.addTool({
         at: z.string().optional(),
         rt: z.string().optional(),
         status: z.nativeEnum(JobDeliveredStatus).optional(),
-        subStatus: z.nativeEnum(JobDeliveredSubStatus).optional(),
+        // subStatus: z.nativeEnum(JobDeliveredSubStatus).optional(),
         // status: z.enum(['send', 'viewed', 'intersted', 'interviewed', 'unsuitable']).optional(),
         // subStatus: z.enum(['all', 'toBeComfirm', 'accepted', 'refused']).optional(),
         pageIndex: z.number().optional(),
@@ -149,9 +149,27 @@ server.addTool({
             rt: args.rt,
             type: args.status || JobDeliveredStatus.全部,
             pageIndex: args.pageIndex || 1,
-            pageSize: args.pageSize || 20,
+            pageSize: args.pageSize || 50,
         });
         if (resumeDetail.code == 200) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `${JSON.stringify({
+                            pageIndex: args.pageIndex || 1,
+                            pageSize: args.pageSize || 20,
+                            list: resumeDetail.data,
+                            totalCount: resumeDetail.total,
+                            totalPage: Math.ceil(resumeDetail.total / (args.pageSize || 20)),
+                            moreUrl: "https://i.zhaopin.com/schedule",
+                            systemPrompts: [
+                                "请将回复中的所有投递记录，替换为 {{delivery-list}}。请确保仅替换真实的投递记录，其他信息保持原样。",
+                            ],
+                        })}`,
+                    },
+                ],
+            };
             return {
                 content: [
                     {
