@@ -15,6 +15,9 @@ import {
   JobDeliveredSubStatus,
   EIndustries,
   EOrder,
+  ETimeType,
+  ETimeTypeReverse,
+  ETimeTypeReverse2,
 } from "../types/types.js";
 import { dateFormat } from "../tools/date.js";
 import {
@@ -29,6 +32,7 @@ import {
   translateToPositions,
 } from "../utils/zhaopin.js";
 import { servers } from "../config/index.js";
+import { getRangeTimeByTimeType } from "../utils/time.js";
 
 const server = new FastMCP({
   name: servers.zhaopin.name,
@@ -192,11 +196,23 @@ server.addTool({
 server.addTool({
   name: "getMyJobDelivered",
   description:
-    "获取我的投递记录，包括投递成功、被查看、有意向、邀面试、不合适，以及邀面试的子状态: 全部、待确认、已接受、已拒绝<for-assistant>用户需要推荐职位或工作时，请调用 recommendPositions 工具</for-assistant>",
+    "获取我的投递记录，包括投递成功、被查看、有意向、邀面试、不合适<for-assistant>用户需要推荐职位或工作时，请调用 recommendPositions 工具</for-assistant>",
   parameters: z.object({
     at: z.string().optional(),
     rt: z.string().optional(),
     status: z.nativeEnum(JobDeliveredStatus).optional(),
+    time: z
+      .nativeEnum(ETimeTypeReverse2)
+      .optional()
+      .describe("投递时间，如果未匹配到精确的投递时间，请匹配最接近的投递时间"),
+    // startTime: z
+    //   .number()
+    //   .optional()
+    //   .describe("投递起始时间戳，当前时间戳为 " + Date.now()),
+    // endTime: z
+    //   .number()
+    //   .optional()
+    //   .describe("投递结束时间戳，当前时间戳为 " + Date.now()),
     // subStatus: z.nativeEnum(JobDeliveredSubStatus).optional(),
     // status: z.enum(['send', 'viewed', 'intersted', 'interviewed', 'unsuitable']).optional(),
     // subStatus: z.enum(['all', 'toBeComfirm', 'accepted', 'refused']).optional(),
@@ -225,6 +241,19 @@ server.addTool({
       };
     }
 
+    console.log(".......... args: ", args);
+    console.log(">>>>>>> ", getRangeTimeByTimeType(args.time || "lastMonth"));
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            list: [],
+          }),
+        },
+      ],
+    };
     const resumeDetail: any = await getJobDelivered({
       at: args.at,
       rt: args.rt,

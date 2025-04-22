@@ -391,3 +391,193 @@ export var ESalaryType;
     ESalaryType["35000-50000"] = "35000-50000";
     ESalaryType["50000\u4EE5\u4E0A"] = "50000\u4EE5\u4E0A";
 })(ESalaryType || (ESalaryType = {}));
+export var ETimeType;
+(function (ETimeType) {
+    ETimeType["today"] = "\u4ECA\u65E5";
+    ETimeType["yesterday"] = "\u6628\u65E5";
+    ETimeType["week"] = "\u672C\u5468";
+    ETimeType["lastWeek"] = "\u4E0A\u5468";
+    ETimeType["month"] = "\u672C\u6708";
+    ETimeType["lastMonth"] = "\u4E0A\u6708";
+    ETimeType["quarter"] = "\u672C\u5B63\u5EA6";
+    ETimeType["lastQuarter"] = "\u4E0A\u5B63\u5EA6";
+    ETimeType["year"] = "\u672C\u5E74";
+    ETimeType["lastYear"] = "\u53BB\u5E74";
+    ETimeType["last2Days"] = "\u6700\u8FD12\u5929";
+    ETimeType["last3Days"] = "\u6700\u8FD13\u5929";
+    ETimeType["last4Days"] = "\u6700\u8FD14\u5929";
+    ETimeType["last5Days"] = "\u6700\u8FD15\u5929";
+    ETimeType["last6Days"] = "\u6700\u8FD16\u5929";
+    ETimeType["last7Days"] = "\u6700\u8FD17\u5929";
+    ETimeType["last8Days"] = "\u6700\u8FD18\u5929";
+    ETimeType["last9Days"] = "\u6700\u8FD19\u5929";
+    ETimeType["last10Days"] = "\u6700\u8FD110\u5929";
+    ETimeType["last11Days"] = "\u6700\u8FD111\u5929";
+    ETimeType["last12Days"] = "\u6700\u8FD112\u5929";
+    ETimeType["last2Month"] = "\u6700\u8FD12\u4E2A\u6708";
+    ETimeType["last3Month"] = "\u6700\u8FD13\u4E2A\u6708";
+    ETimeType["last4Month"] = "\u6700\u8FD14\u4E2A\u6708";
+    ETimeType["last5Month"] = "\u6700\u8FD15\u4E2A\u6708";
+    ETimeType["last6Month"] = "\u6700\u8FD16\u4E2A\u6708";
+    ETimeType["last7Month"] = "\u6700\u8FD17\u4E2A\u6708";
+    ETimeType["last8Month"] = "\u6700\u8FD18\u4E2A\u6708";
+    ETimeType["last9Month"] = "\u6700\u8FD19\u4E2A\u6708";
+    ETimeType["last10Month"] = "\u6700\u8FD110\u4E2A\u6708";
+    ETimeType["last11Month"] = "\u6700\u8FD111\u4E2A\u6708";
+    ETimeType["last12Month"] = "\u6700\u8FD112\u4E2A\u6708";
+})(ETimeType || (ETimeType = {}));
+export var ETimeTypeReverse;
+(function (ETimeTypeReverse) {
+    ETimeTypeReverse["\u4ECA\u65E5"] = "today";
+    ETimeTypeReverse["\u6628\u65E5"] = "yesterday";
+    ETimeTypeReverse["\u524D\u5929"] = "beforeYesterday";
+    ETimeTypeReverse["\u672C\u5468"] = "week";
+    ETimeTypeReverse["\u4E0A\u5468"] = "lastWeek";
+    ETimeTypeReverse["\u4E0A\u4E0A\u5468"] = "beforeLastWeek";
+    ETimeTypeReverse["\u672C\u6708"] = "month";
+    ETimeTypeReverse["\u4E0A\u6708"] = "lastMonth";
+    ETimeTypeReverse["\u672C\u5B63\u5EA6"] = "quarter";
+    ETimeTypeReverse["\u4E0A\u5B63\u5EA6"] = "lastQuarter";
+    ETimeTypeReverse["\u672C\u5E74"] = "year";
+    ETimeTypeReverse["\u53BB\u5E74"] = "lastYear";
+    ETimeTypeReverse["\u6700\u8FD12\u5929"] = "last2Days";
+    ETimeTypeReverse["\u6700\u8FD13\u5929"] = "last3Days";
+    ETimeTypeReverse["\u6700\u8FD14\u5929"] = "last4Days";
+    ETimeTypeReverse["\u6700\u8FD15\u5929"] = "last5Days";
+    ETimeTypeReverse["\u6700\u8FD16\u5929"] = "last6Days";
+    ETimeTypeReverse["\u6700\u8FD17\u5929"] = "last7Days";
+    ETimeTypeReverse["\u6700\u8FD18\u5929"] = "last8Days";
+    ETimeTypeReverse["\u6700\u8FD19\u5929"] = "last9Days";
+    ETimeTypeReverse["\u6700\u8FD110\u5929"] = "last10Days";
+    ETimeTypeReverse["\u6700\u8FD111\u5929"] = "last11Days";
+    ETimeTypeReverse["\u6700\u8FD112\u5929"] = "last12Days";
+    ETimeTypeReverse["\u6700\u8FD113\u5929"] = "last13Days";
+    ETimeTypeReverse["\u6700\u8FD114\u5929"] = "last14Days";
+    ETimeTypeReverse["\u6700\u8FD115\u5929"] = "last15Days";
+    ETimeTypeReverse["\u6700\u8FD116\u5929"] = "last16Days";
+    ETimeTypeReverse["\u6700\u8FD117\u5929"] = "last17Days";
+    ETimeTypeReverse["\u6700\u8FD118\u5929"] = "last18Days";
+    ETimeTypeReverse["\u6700\u8FD119\u5929"] = "last19Days";
+    ETimeTypeReverse["\u6700\u8FD120\u5929"] = "last20Days";
+    ETimeTypeReverse["\u6700\u8FD121\u5929"] = "last21Days";
+    ETimeTypeReverse["\u6700\u8FD122\u5929"] = "last22Days";
+    ETimeTypeReverse["\u6700\u8FD123\u5929"] = "last23Days";
+    ETimeTypeReverse["\u6700\u8FD124\u5929"] = "last24Days";
+    ETimeTypeReverse["\u6700\u8FD125\u5929"] = "last25Days";
+    ETimeTypeReverse["\u6700\u8FD126\u5929"] = "last26Days";
+    ETimeTypeReverse["\u6700\u8FD127\u5929"] = "last27Days";
+    ETimeTypeReverse["\u6700\u8FD128\u5929"] = "last28Days";
+    ETimeTypeReverse["\u6700\u8FD129\u5929"] = "last29Days";
+    ETimeTypeReverse["\u6700\u8FD130\u5929"] = "last30Days";
+    ETimeTypeReverse["\u6700\u8FD131\u5929"] = "last31Days";
+    ETimeTypeReverse["\u6700\u8FD12\u4E2A\u6708"] = "last2Month";
+    ETimeTypeReverse["\u6700\u8FD13\u4E2A\u6708"] = "last3Month";
+    ETimeTypeReverse["\u6700\u8FD14\u4E2A\u6708"] = "last4Month";
+    ETimeTypeReverse["\u6700\u8FD15\u4E2A\u6708"] = "last5Month";
+    ETimeTypeReverse["\u6700\u8FD16\u4E2A\u6708"] = "last6Month";
+    ETimeTypeReverse["\u6700\u8FD17\u4E2A\u6708"] = "last7Month";
+    ETimeTypeReverse["\u6700\u8FD18\u4E2A\u6708"] = "last8Month";
+    ETimeTypeReverse["\u6700\u8FD19\u4E2A\u6708"] = "last9Month";
+    ETimeTypeReverse["\u6700\u8FD110\u4E2A\u6708"] = "last10Month";
+    ETimeTypeReverse["\u6700\u8FD111\u4E2A\u6708"] = "last11Month";
+    ETimeTypeReverse["\u6700\u8FD112\u4E2A\u6708"] = "last12Month";
+    ETimeTypeReverse["\u5176\u4ED6"] = "other";
+})(ETimeTypeReverse || (ETimeTypeReverse = {}));
+;
+export const ETimeTypeReverse2 = {
+    "今日": "today",
+    "昨日": "yesterday",
+    "前天": "beforeYesterday",
+    "本周": "week",
+    "上周": "lastWeek",
+    "上上周": "beforeLastWeek",
+    "本月": "month",
+    "上个月": "lastMonth",
+    "上上个月": "beforeLastMonth",
+    "本季度": "quarter",
+    "上季度": "lastQuarter",
+    "上上季度": "beforeLastQuarter",
+    "本年": "year",
+    "去年": "lastYear",
+    "前年": "beforeLastYear",
+    "最近2天": "last2Days",
+    "最近3天": "last3Days",
+    "最近4天": "last4Days",
+    "最近5天": "last5Days",
+    "最近6天": "last6Days",
+    "最近7天": "last7Days",
+    "最近8天": "last8Days",
+    "最近9天": "last9Days",
+    "最近10天": "last10Days",
+    "最近11天": "last11Days",
+    "最近12天": "last12Days",
+    "最近13天": "last13Days",
+    "最近14天": "last14Days",
+    "最近15天": "last15Days",
+    "最近16天": "last16Days",
+    "最近17天": "last17Days",
+    "最近18天": "last18Days",
+    "最近19天": "last19Days",
+    "最近20天": "last20Days",
+    "最近21天": "last21Days",
+    "最近22天": "last22Days",
+    "最近23天": "last23Days",
+    "最近24天": "last24Days",
+    "最近25天": "last25Days",
+    "最近26天": "last26Days",
+    "最近27天": "last27Days",
+    "最近28天": "last28Days",
+    "最近29天": "last29Days",
+    "最近30天": "last30Days",
+    "最近31天": "last31Days",
+    "最近1周": "last1Week",
+    "最近2周": "last2Weeks",
+    "最近3周": "last3Weeks",
+    "最近4周": "last4Weeks",
+    "最近5周": "last5Weeks",
+    "最近6周": "last6Weeks",
+    "最近7周": "last7Weeks",
+    "最近8周": "last8Weeks",
+    "最近9周": "last9Weeks",
+    "最近10周": "last10Weeks",
+    "最近11周": "last11Weeks",
+    "最近12周": "last12Weeks",
+    "最近13周": "last13Weeks",
+    "最近14周": "last14Weeks",
+    "最近15周": "last15Weeks",
+    "最近16周": "last16Weeks",
+    "最近17周": "last17Weeks",
+    "最近18周": "last18Weeks",
+    "最近19周": "last19Weeks",
+    "最近20周": "last20Weeks",
+    "最近1个月": "last1Months",
+    "最近2个月": "last2Months",
+    "最近3个月": "last3Months",
+    "最近4个月": "last4Months",
+    "最近5个月": "last5Months",
+    "最近6个月": "last6Months",
+    "最近7个月": "last7Months",
+    "最近8个月": "last8Months",
+    "最近9个月": "last9Months",
+    "最近10个月": "last10Months",
+    "最近11个月": "last11Months",
+    "最近12个月": "last12Months",
+    "最近13个月": "last13Months",
+    "最近14个月": "last14Months",
+    "最近15个月": "last15Months",
+    "最近16个月": "last16Months",
+    "最近17个月": "last17Months",
+    "最近18个月": "last18Months",
+    "最近19个月": "last19Months",
+    "最近20个月": "last20Months",
+    "最近1年": "last1Year",
+    "最近2年": "last2Years",
+    "最近3年": "last3Years",
+    "最近4年": "last4Years",
+    "最近5年": "last5Years",
+    "最近6年": "last6Years",
+    "最近7年": "last7Years",
+    "最近8年": "last8Years",
+    "最近9年": "last9Years",
+    "最近10年": "last10Years"
+};
