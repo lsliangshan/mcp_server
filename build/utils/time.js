@@ -4,6 +4,18 @@ function getWeekRange(offsetWeeks = 0, baseDate = new Date()) {
     date.setDate(date.getDate() + offsetWeeks * 7);
     return calculateWeekRange(date);
 }
+function getWeekDayRange(weekDay = 1, baseDate = new Date()) {
+    const date = new Date(baseDate);
+    const dayOfWeek = date.getDay(); // 0=周日
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(date);
+    monday.setDate(date.getDate() + diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+    const targetDay = new Date(monday);
+    targetDay.setDate(monday.getDate() + (weekDay - 1));
+    targetDay.setHours(23, 59, 59, 999);
+    return [targetDay.setHours(0, 0, 0, 0), targetDay.setHours(23, 59, 59, 999)];
+}
 /** 自然月范围 */
 function getMonthRange(offsetMonths = 0, baseDate = new Date()) {
     const date = new Date(baseDate);
@@ -75,33 +87,39 @@ function calculateQuarterRange(date) {
 }
 export function getRangeTimeByTimeType(timeType) {
     const now = new Date();
+    if (timeType.match(/(\d{4})[-/](\d{2})[-/](\d{2})/)) {
+        const t = timeType.replace(/(\d{4})[-/](\d{2})[-/](\d{2})/, (_, y, m, d) => `${y}-${m}-${d}`);
+        const date = new Date(t);
+        return [date.setHours(0, 0, 0, 0), date.setHours(23, 59, 59, 999)];
+    }
+    const nowTime = now.getTime();
     let rangeTime = [];
     if (timeType.match(/last\d+Months/)) {
         const months = Number(timeType.match(/last(\d+)Months/)?.[1]);
         rangeTime = [
             now.setHours(0, 0, 0, 0) - months * 30 * 24 * 60 * 60 * 1000,
-            now.getTime(),
+            nowTime,
         ];
     }
     else if (timeType.match(/last\d+Days/)) {
         const days = Number(timeType.match(/last(\d+)Days/)?.[1]);
         rangeTime = [
             now.setHours(0, 0, 0, 0) - days * 24 * 60 * 60 * 1000,
-            now.getTime(),
+            nowTime,
         ];
     }
     else if (timeType.match(/last\d+Weeks/)) {
         const weeks = Number(timeType.match(/last(\d+)Weeks/)?.[1]);
         rangeTime = [
             now.setHours(0, 0, 0, 0) - weeks * 7 * 24 * 60 * 60 * 1000,
-            now.getTime(),
+            nowTime,
         ];
     }
     else if (timeType.match(/last\d+Years/)) {
         const years = Number(timeType.match(/last(\d+)Years/)?.[1]);
         rangeTime = [
             now.setHours(0, 0, 0, 0) - years * 365 * 24 * 60 * 60 * 1000,
-            now.getTime(),
+            nowTime,
         ];
     }
     else {
@@ -156,6 +174,27 @@ export function getRangeTimeByTimeType(timeType) {
                 break;
             case "beforeLastYear":
                 rangeTime = getYearRange(-2);
+                break;
+            case "monday":
+                rangeTime = getWeekDayRange(1);
+                break;
+            case "tuesday":
+                rangeTime = getWeekDayRange(2);
+                break;
+            case "wednesday":
+                rangeTime = getWeekDayRange(3);
+                break;
+            case "thursday":
+                rangeTime = getWeekDayRange(4);
+                break;
+            case "friday":
+                rangeTime = getWeekDayRange(5);
+                break;
+            case "saturday":
+                rangeTime = getWeekDayRange(6);
+                break;
+            case "sunday":
+                rangeTime = getWeekDayRange(7);
                 break;
         }
     }

@@ -120,6 +120,10 @@ server.addTool({
         at: z.string().optional(),
         rt: z.string().optional(),
         status: z.nativeEnum(JobDeliveredStatus).optional(),
+        date: z
+            .string()
+            .optional()
+            .describe("投递时间，匹配标准时间格式，如 2025-02-02"),
         time: z
             .nativeEnum(ETimeTypeReverse2)
             .optional()
@@ -135,8 +139,8 @@ server.addTool({
         // subStatus: z.nativeEnum(JobDeliveredSubStatus).optional(),
         // status: z.enum(['send', 'viewed', 'intersted', 'interviewed', 'unsuitable']).optional(),
         // subStatus: z.enum(['all', 'toBeComfirm', 'accepted', 'refused']).optional(),
-        pageIndex: z.number().optional(),
-        pageSize: z.number().optional(),
+        pageIndex: z.number().optional().default(1),
+        pageSize: z.number().optional().default(100),
     }),
     execute: async (args) => {
         if (!args.at || args.at == "undefined") {
@@ -157,26 +161,36 @@ server.addTool({
                 ],
             };
         }
-        console.log(".......... args: ", args);
-        console.log(">>>>>>> ", getRangeTimeByTimeType(args.time || "lastMonth"));
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: JSON.stringify({
-                        list: [],
-                    }),
-                },
-            ],
-        };
-        const resumeDetail = await getJobDelivered({
+        // console.log(".......... args: ", args);
+        // const rangeTime = getRangeTimeByTimeType(
+        //   args.date || args.time || "lastMonth"
+        // );
+        // console.log(".......... rangeTime: ", rangeTime);
+        // return {
+        //   content: [
+        //     {
+        //       type: "text",
+        //       text: `${JSON.stringify({
+        //         systemPrompts: [
+        //           "请将回复中的所有投递记录，替换为 {{delivery-list}}。请确保仅替换真实的投递记录，其他信息保持原样。",
+        //         ],
+        //       })}`,
+        //     },
+        //   ],
+        // };
+        const deliveredList = await getJobDelivered({
             at: args.at,
             rt: args.rt,
             type: args.status || JobDeliveredStatus.全部,
             pageIndex: args.pageIndex || 1,
             pageSize: args.pageSize || 50,
         });
-        if (resumeDetail.code == 200) {
+        if (deliveredList.code == 200) {
+            const rangeTime = getRangeTimeByTimeType(args.date || args.time || "last30Days");
+            const filteredData = deliveredList.data.filter((item) => {
+                const deliveryTime = new Date(item.msgTime).getTime();
+                return deliveryTime >= rangeTime[0] && deliveryTime <= rangeTime[1];
+            });
             return {
                 content: [
                     {
@@ -184,11 +198,12 @@ server.addTool({
                         text: `${JSON.stringify({
                             pageIndex: args.pageIndex || 1,
                             pageSize: args.pageSize || 20,
-                            list: resumeDetail.data,
-                            totalCount: resumeDetail.total,
-                            totalPage: Math.ceil(resumeDetail.total / (args.pageSize || 20)),
+                            list: filteredData,
+                            totalCount: filteredData.length,
+                            totalPage: Math.ceil(filteredData.length / (args.pageSize || 20)),
                             moreUrl: "https://i.zhaopin.com/schedule",
                             systemPrompts: [
+                                `一共有 ${deliveredList.total} 条投递记录，符合条件的有 ${filteredData.length} 条投递记录。`,
                                 "请将回复中的所有投递记录，替换为 {{delivery-list}}。请确保仅替换真实的投递记录，其他信息保持原样。",
                             ],
                         })}`,
@@ -199,17 +214,17 @@ server.addTool({
                 content: [
                     {
                         type: "text",
-                        text: `${resumeDetail.data.length < 1
+                        text: `${deliveredList.data.length < 1
                             ? `没有查询到投递记录`
                             : // `没有符合“当前搜索条件”和“用户的求职意向”的职位。建议修改条件或求职意向后重新查询。也可以使用搜索工具，搜索职位。如：搜索 “${args.keyword}” 相关职位。`
                                 `JSON: ${JSON.stringify({
                                     code: 200,
                                     finally: true, // unmodify: true 表示不要修改模板
                                     data: {
-                                        totalCount: resumeDetail.total,
+                                        totalCount: deliveredList.total,
                                     },
                                     message: `${formatResponsePositionsTemplate({
-                                        positionResponse: translateToPositions(resumeDetail.data, resumeDetail.total),
+                                        positionResponse: translateToPositions(deliveredList.data, deliveredList.total),
                                         pageIndex: args.pageIndex || 1,
                                         pageSize: args.pageSize || 20,
                                         moreUrl: "https://i.zhaopin.com/schedule",
