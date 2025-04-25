@@ -1,7 +1,7 @@
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
 import { beforeDeliveryPositions, deliveryPositions, getJobDelivered, getPositionDetailBatch, getResumeDetail, getResumeNumber, searchPositions, } from "../tools/zhaopin.js";
-import { ECompanySize, JobDeliveredStatus, EIndustries, EOrder, ETimeTypeReverse2, } from "../types/types.js";
+import { ECompanySize, jobDeliveredStatusReverse, EIndustries, EOrder, ETimeTypeReverse, jobDeliveredStatus, } from "../types/types.js";
 import { dateFormat } from "../tools/date.js";
 import { formatMorePositionsUrl, formatRequestParams, formatResponsePositionsTemplate, formatSalary, getPositionRecommendationParams, getReponseTemplate, translateToPositions, } from "../utils/zhaopin.js";
 import { servers } from "../config/index.js";
@@ -119,13 +119,16 @@ server.addTool({
     parameters: z.object({
         at: z.string().optional(),
         rt: z.string().optional(),
-        status: z.nativeEnum(JobDeliveredStatus).optional(),
+        status: z
+            .nativeEnum(jobDeliveredStatus)
+            .optional()
+            .describe("投递记录的状态，除”已投递“外，其他状态均代表有反馈。"),
         date: z
             .string()
             .optional()
             .describe("投递时间，匹配标准时间格式，如 2025-02-02"),
         time: z
-            .nativeEnum(ETimeTypeReverse2)
+            .nativeEnum(ETimeTypeReverse)
             .optional()
             .describe("投递时间，如果未匹配到精确的投递时间，请匹配最接近的投递时间"),
         // startTime: z
@@ -181,7 +184,9 @@ server.addTool({
         const deliveredList = await getJobDelivered({
             at: args.at,
             rt: args.rt,
-            type: args.status || JobDeliveredStatus.全部,
+            type: args.status
+                ? jobDeliveredStatusReverse[args.status || ""]
+                : jobDeliveredStatusReverse.全部,
             pageIndex: args.pageIndex || 1,
             pageSize: args.pageSize || 50,
         });

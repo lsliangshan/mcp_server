@@ -1,4 +1,4 @@
-import { ETimeTypeReverse2 } from "../types/types.js";
+import { ETimeTypeReverse } from "../types/types.js";
 
 /** 自然周范围（周一为起始） */
 function getWeekRange(offsetWeeks: number = 0, baseDate: Date = new Date()) {
@@ -113,7 +113,7 @@ function calculateQuarterRange(date: Date) {
 }
 
 export function getRangeTimeByTimeType(
-  timeType: (typeof ETimeTypeReverse2)[keyof typeof ETimeTypeReverse2] | string
+  timeType: (typeof ETimeTypeReverse)[keyof typeof ETimeTypeReverse] | string
 ) {
   const now = new Date();
 
