@@ -720,6 +720,9 @@ server.addTool({
 server.addTool({
     name: "deliveryPositions",
     description: "投递职位。",
+    annotations: {
+        title: "请帮我投递职位 {{职位编号}}",
+    },
     parameters: z.object({
         at: z.string().optional(),
         rt: z.string().optional(),
